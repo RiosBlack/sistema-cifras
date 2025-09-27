@@ -8,64 +8,89 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  password  String
-  role      Role     @default(USER)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  cifras    Cifra[]
-  tags      Tag[]
-  
+  id          String       @id @default(cuid())
+  email       String       @unique
+  name        String?
+  password    String
+  role        Role         @default(USER)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  cifras      Cifra[]
+  repertorios Repertorio[]
+  tags        Tag[]
+
   @@map("users")
 }
 
 model Tag {
-  id        String   @id @default(cuid())
+  id        String     @id @default(cuid())
   name      String
-  color     String   @default("#8B5CF6")
+  color     String     @default("#8B5CF6")
   userId    String
-  createdAt DateTime @default(now())
-  
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime   @default(now())
   cifras    CifraTag[]
-  
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@map("tags")
 }
 
 model Cifra {
-  id             String       @id @default(cuid())
+  id             String            @id @default(cuid())
   title          String
   artist         String
   originalKey    String?
   currentKey     String?
-  capoPosition   Int          @default(0)
+  capoPosition   Int               @default(0)
   difficulty     Difficulty?
-  lyrics         String       @db.Text
+  lyrics         String
   chords         Json?
   chordsOriginal Json?
-  notes          String?      @db.Text
+  notes          String?
   userId         String
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  
-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
   tags           CifraTag[]
-  
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  repertorios    RepertorioCifra[]
+
   @@map("cifras")
 }
 
 model CifraTag {
   cifraId String
   tagId   String
-  
-  cifra   Cifra @relation(fields: [cifraId], references: [id], onDelete: Cascade)
-  tag     Tag   @relation(fields: [tagId], references: [id], onDelete: Cascade)
-  
+  cifra   Cifra  @relation(fields: [cifraId], references: [id], onDelete: Cascade)
+  tag     Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
   @@id([cifraId, tagId])
   @@map("cifra_tags")
+}
+
+model Repertorio {
+  id          String            @id @default(cuid())
+  name        String
+  description String?
+  userId      String
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  cifras      RepertorioCifra[]
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("repertorios")
+}
+
+model RepertorioCifra {
+  id           String     @id @default(cuid())
+  repertorioId String
+  cifraId      String
+  selectedKey  String
+  order        Int        @default(0)
+  createdAt    DateTime   @default(now())
+  cifra        Cifra      @relation(fields: [cifraId], references: [id], onDelete: Cascade)
+  repertorio   Repertorio @relation(fields: [repertorioId], references: [id], onDelete: Cascade)
+
+  @@unique([repertorioId, cifraId])
+  @@map("repertorio_cifras")
 }
 
 enum Role {
