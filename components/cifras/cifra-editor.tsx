@@ -16,10 +16,12 @@ import { TransposeControls } from "./transpose-controls"
 import { Save, Music, Tag, X } from "lucide-react"
 import { NOTES, transposeLyrics, extractChords, getSemitonesDifference } from "@/lib/music-utils"
 import { ChordLyricAligner } from "./chord-lyric-aligner"
+import { SectionChordBuilder } from "./section-chord-builder"
 
 declare global {
   interface Window {
     insertChordInAligner?: (chord: string) => void
+    insertChordInSectionBuilder?: (chord: string) => void
   }
 }
 
@@ -59,6 +61,7 @@ export function CifraEditor({ initialData, availableTags, onSave, onCancel }: Ci
 
   const [newTag, setNewTag] = useState("")
   const [activeTab, setActiveTab] = useState("edit")
+  const [constructorMode, setConstructorMode] = useState<"aligner" | "sections">("sections")
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const handleInputChange = (field: string, value: any) => {
@@ -226,6 +229,12 @@ export function CifraEditor({ initialData, availableTags, onSave, onCancel }: Ci
     )
   }
 
+  const handleAddSection = (section: any) => {
+    const sectionText = `${section.name}: ${section.chords}${section.repetition ? ` ${section.repetition}x` : ''}`
+    const newLyrics = formData.lyrics ? formData.lyrics + "\n" + sectionText : sectionText
+    handleInputChange("lyrics", newLyrics)
+  }
+
   const handleSave = () => {
     const chords = extractChords(formData.lyrics)
 
@@ -338,38 +347,52 @@ export function CifraEditor({ initialData, availableTags, onSave, onCancel }: Ci
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <Label>Construtor de Cifra</Label>
-                  <ChordSelector
-                    onChordSelect={(chord) => {
-                      // Chama a função global se existir
-                      if (window.insertChordInAligner) {
-                        window.insertChordInAligner(chord)
-                      }
-                    }}
-                  />
-                </div>
-
-                <ChordLyricAligner
-                  onAddLine={(formattedLine) => {
-                    const newLyrics = formData.lyrics ? formData.lyrics + "\n" + formattedLine : formattedLine
-                    handleInputChange("lyrics", newLyrics)
-                  }}
-                  onChordSelect={true}
-                />
-
-                {/* Letra completa */}
-                <div className="space-y-2">
-                  <Label htmlFor="full-lyrics">Letra Completa</Label>
-                  <Textarea
-                    id="full-lyrics"
-                    value={formData.lyrics}
-                    onChange={(e) => handleInputChange("lyrics", e.target.value)}
-                    placeholder="A letra completa aparecerá aqui conforme você constrói as linhas acima..."
-                    className="min-h-[250px] font-mono text-sm"
-                  />
-                  <div className="text-xs text-muted-foreground">
-                    Você pode editar diretamente aqui ou usar o construtor acima para maior precisão no alinhamento.
+                  <div className="flex rounded-lg border p-1">
+                    <Button
+                      variant={constructorMode === "sections" ? "default" : "ghost"}
+                      size="sm"
+                      onClick={() => setConstructorMode("sections")}
+                      className="h-8 px-3"
+                    >
+                      Por Seções
+                    </Button>
+                    <Button
+                      variant={constructorMode === "aligner" ? "default" : "ghost"}
+                      size="sm"
+                      onClick={() => setConstructorMode("aligner")}
+                      className="h-8 px-3"
+                    >
+                      Alinhamento
+                    </Button>
                   </div>
                 </div>
+
+                {constructorMode === "sections" ? (
+                  <SectionChordBuilder
+                    onAddSection={handleAddSection}
+                    onChordSelect={true}
+                  />
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex justify-end">
+                      <ChordSelector
+                        onChordSelect={(chord) => {
+                          if (window.insertChordInAligner) {
+                            window.insertChordInAligner(chord)
+                          }
+                        }}
+                      />
+                    </div>
+                    <ChordLyricAligner
+                      onAddLine={(formattedLine) => {
+                        const newLyrics = formData.lyrics ? formData.lyrics + "\n" + formattedLine : formattedLine
+                        handleInputChange("lyrics", newLyrics)
+                      }}
+                      onChordSelect={true}
+                    />
+                  </div>
+                )}
+
               </div>
 
               {/* Tags */}
