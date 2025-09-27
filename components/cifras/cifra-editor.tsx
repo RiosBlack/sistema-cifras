@@ -30,7 +30,15 @@ interface CifraEditorProps {
     artist: string
     originalKey: string
     lyrics: string
-    tags: string[]
+    tags: Array<{
+      cifraId: string
+      tagId: string
+      tag: {
+        id: string
+        name: string
+        color: string
+      }
+    }> | string[]
     notes?: string
   }
   availableTags: Array<{ id: string; name: string; color: string }>
@@ -53,7 +61,11 @@ export function CifraEditor({ initialData, availableTags, onSave, onCancel }: Ci
     chordsLine: "", // Nova linha para acordes temporária
     lyricsLine: "", // Nova linha para letra temporária
     notes: initialData?.notes || "",
-    tags: initialData?.tags || [],
+    tags: Array.isArray(initialData?.tags) 
+      ? initialData.tags.every(tag => typeof tag === 'string') 
+        ? initialData.tags as string[]
+        : (initialData.tags as any[]).map(t => t.tag.name)
+      : [],
     capoPosition: 0,
   })
 
@@ -233,13 +245,20 @@ export function CifraEditor({ initialData, availableTags, onSave, onCancel }: Ci
   }
 
   const handleSave = () => {
+    console.log('Dados do formulário:', formData)
+    
     const chords = extractChords(formData.lyrics)
+    console.log('Acordes extraídos:', chords)
 
-    onSave({
+    const dataToSave = {
       ...formData,
       chords,
       chordsOriginal: chords, // Backup dos acordes originais
-    })
+    }
+    
+    console.log('Dados para salvar:', dataToSave)
+    
+    onSave(dataToSave)
   }
 
   const renderPreview = () => {

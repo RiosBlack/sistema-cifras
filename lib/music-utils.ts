@@ -93,9 +93,17 @@ export function suggestCapoPosition(originalKey: string): number {
 
 // Extrai acordes de uma letra cifrada
 export function extractChords(lyrics: string): string[] {
-  const chordRegex = /\b([A-G][#b]?(?:m|maj|dim|aug|sus[24]|add\d+|\d+)*)\b/g
-  const matches = lyrics.match(chordRegex) || []
-  return [...new Set(matches)] // Remove duplicatas
+  // Regex para acordes no formato [C], [Dm7], etc.
+  const bracketRegex = /\[([A-G][#b]?(?:m|maj|dim|aug|sus[24]|add\d+|\d+)*)\]/g
+  
+  // Regex para acordes em seções (formato: Intro: D9 / A / C#m7)
+  const sectionRegex = /\b([A-G][#b]?(?:m|maj|dim|aug|sus[24]|add\d+|\d+)*)\b/g
+  
+  const bracketMatches = [...(lyrics.match(bracketRegex) || [])].map(match => match.slice(1, -1))
+  const sectionMatches = [...(lyrics.match(sectionRegex) || [])]
+  
+  const allChords = [...bracketMatches, ...sectionMatches]
+  return [...new Set(allChords)] // Remove duplicatas
 }
 
 // Transpõe todos os acordes em uma letra

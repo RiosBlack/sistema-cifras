@@ -17,7 +17,7 @@ const MAIN_CHORDS = [
 // Variações de acordes
 const CHORD_VARIATIONS = [
   "7", "maj7", "m7", "sus2", "sus4", "add9", "9", "11", "13",
-  "dim", "aug", "5", "6", "m6", "maj9", "m9", "7sus4"
+  "dim", "aug", "5", "6", "m6", "maj9", "m9", "7sus4", "m"
 ]
 
 // Símbolos especiais

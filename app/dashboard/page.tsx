@@ -18,7 +18,15 @@ interface Cifra {
   capoPosition: number
   lyrics: string
   notes?: string
-  tags: string[]
+  tags: Array<{
+    cifraId: string
+    tagId: string
+    tag: {
+      id: string
+      name: string
+      color: string
+    }
+  }>
   createdAt: string
 }
 
@@ -37,74 +45,118 @@ export default function Dashboard() {
   const [editingCifra, setEditingCifra] = useState<Cifra | null>(null)
   const [viewingCifra, setViewingCifra] = useState<Cifra | null>(null)
 
-  // Mock data - em produção viria da API
+  // Carregar dados da API
   useEffect(() => {
-    const mockCifras: Cifra[] = [
-      {
-        id: "1",
-        title: "Imagine",
-        artist: "John Lennon",
-        originalKey: "C",
-        currentKey: "C",
-        capoPosition: 0,
-        lyrics:
-          "[C]Imagine there's no [F]heaven\n[C]It's easy if you [F]try\n[C]No hell be[F]low us\n[C]Above us only [F]sky",
-        tags: ["Rock", "Clássico"],
-        createdAt: "2024-01-15",
-      },
-      {
-        id: "2",
-        title: "Wonderwall",
-        artist: "Oasis",
-        originalKey: "G",
-        currentKey: "G",
-        capoPosition: 2,
-        lyrics:
-          "[Em7]Today is [G]gonna be the day that they're [D]gonna throw it back to [C]you\n[Em7]By now you [G]should've somehow real[D]ized what you gotta [C]do",
-        tags: ["Rock", "Britpop"],
-        createdAt: "2024-01-14",
-      },
-    ]
-
-    const mockTags: Tag[] = [
-      { id: "1", name: "Rock", color: "#8B5CF6" },
-      { id: "2", name: "Pop", color: "#06B6D4" },
-      { id: "3", name: "Clássico", color: "#10B981" },
-      { id: "4", name: "Britpop", color: "#F59E0B" },
-    ]
-
-    setCifras(mockCifras)
-    setTags(mockTags)
+    loadCifras()
+    loadTags()
   }, [])
+
+  const loadCifras = async () => {
+    try {
+      const response = await fetch('/api/cifras?userId=cmg2h8hjz0000xntvzqw0hteh')
+      const result = await response.json()
+      
+      if (result.success) {
+        setCifras(result.data)
+      }
+    } catch (error) {
+      console.error('Erro ao carregar cifras:', error)
+    }
+  }
+
+  const loadTags = async () => {
+    try {
+      const response = await fetch('/api/tags?userId=cmg2h8hjz0000xntvzqw0hteh')
+      const result = await response.json()
+      
+      if (result.success) {
+        setTags(result.data)
+      }
+    } catch (error) {
+      console.error('Erro ao carregar tags:', error)
+    }
+  }
 
   const filteredCifras = cifras.filter((cifra) => {
     const matchesSearch =
       cifra.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       cifra.artist.toLowerCase().includes(searchTerm.toLowerCase())
 
-    const matchesTags = selectedTags.length === 0 || selectedTags.some((tag) => cifra.tags.includes(tag))
+    const cifraTagNames = cifra.tags.map(t => t.tag.name)
+    const matchesTags = selectedTags.length === 0 || selectedTags.some((tag) => cifraTagNames.includes(tag))
 
     return matchesSearch && matchesTags
   })
 
-  const handleSaveCifra = (data: any) => {
-    if (editingCifra) {
-      setCifras((prev) => prev.map((c) => (c.id === editingCifra.id ? { ...c, ...data } : c)))
-    } else {
-      const newCifra: Cifra = {
-        id: Date.now().toString(),
-        ...data,
-        createdAt: new Date().toISOString().split("T")[0],
-      }
-      setCifras((prev) => [newCifra, ...prev])
-    }
+  const handleSaveCifra = async (data: any) => {
+    try {
+      console.log('handleSaveCifra chamado com:', data)
+      
+      const userId = "cmg2h8hjz0000xntvzqw0hteh" // ID do usuário teste@exemplo.com
+      
+      if (editingCifra) {
+        console.log('Editando cifra existente:', editingCifra.id)
+        // Atualizar cifra existente
+        const response = await fetch(`/api/cifras/${editingCifra.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            ...data,
+            userId
+          }),
+        })
 
-    setShowEditor(false)
-    setEditingCifra(null)
+        const result = await response.json()
+        console.log('Resposta da API (editar):', result)
+        
+        if (result.success) {
+          setCifras((prev) => prev.map((c) => (c.id === editingCifra.id ? result.data : c)))
+        }
+      } else {
+        console.log('Criando nova cifra')
+        // Criar nova cifra
+        const response = await fetch('/api/cifras', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            ...data,
+            userId
+          }),
+        })
+
+        const result = await response.json()
+        console.log('Resposta da API (criar):', result)
+        
+        if (result.success) {
+          setCifras((prev) => [result.data, ...prev])
+        }
+      }
+
+      setShowEditor(false)
+      setEditingCifra(null)
+    } catch (error) {
+      console.error('Erro ao salvar cifra:', error)
+    }
   }
 
-  const handleDeleteCifra = (id: string) => {
-    setCifras((prev) => prev.filter((c) => c.id !== id))
+  const handleDeleteCifra = async (id: string) => {
+    try {
+      const response = await fetch(`/api/cifras/${id}`, {
+        method: 'DELETE',
+      })
+
+      const result = await response.json()
+      
+      if (result.success) {
+        setCifras((prev) => prev.filter((c) => c.id !== id))
+      }
+    } catch (error) {
+      console.error('Erro ao deletar cifra:', error)
+    }
   }
 
   const toggleTag = (tagName: string) => {
@@ -156,9 +208,9 @@ export default function Dashboard() {
           </div>
 
           <div className="flex flex-wrap gap-1">
-            {cifra.tags.map((tag) => (
-              <Badge key={tag} variant="secondary" className="text-xs">
-                {tag}
+            {cifra.tags.map((tagRelation) => (
+              <Badge key={tagRelation.tagId} variant="secondary" className="text-xs">
+                {tagRelation.tag.name}
               </Badge>
             ))}
           </div>
