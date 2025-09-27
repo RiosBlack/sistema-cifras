@@ -7,8 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Plus, Search, Music, Filter, Edit, Trash2, Eye, Play } from "lucide-react"
-import { NOTES } from "@/lib/music-utils"
+import { Plus, Search, Music, Filter, Edit, Trash2, Eye, Play, ChevronUp, ChevronDown, X } from "lucide-react"
+import { NOTES, getSemitonesDifference, transposeLyrics } from "@/lib/music-utils"
 
 interface Repertorio {
   id: string
@@ -49,6 +49,10 @@ export default function RepertorioPage() {
   const [newRepertorioDescription, setNewRepertorioDescription] = useState("")
   const [editRepertorioName, setEditRepertorioName] = useState("")
   const [editRepertorioDescription, setEditRepertorioDescription] = useState("")
+  const [showAddCifraModal, setShowAddCifraModal] = useState(false)
+  const [selectedCifra, setSelectedCifra] = useState<Cifra | null>(null)
+  const [selectedKey, setSelectedKey] = useState("")
+  const [addingToRepertorio, setAddingToRepertorio] = useState<Repertorio | null>(null)
 
   // Carregar dados da API
   useEffect(() => {
@@ -161,6 +165,153 @@ export default function RepertorioPage() {
     setEditRepertorioDescription(repertorio.description || "")
   }
 
+  const openAddCifraModal = (repertorio: Repertorio) => {
+    setAddingToRepertorio(repertorio)
+    setShowAddCifraModal(true)
+    setSelectedCifra(null)
+    setSelectedKey("")
+  }
+
+  const handleAddCifraToRepertorio = async () => {
+    if (!addingToRepertorio || !selectedCifra || !selectedKey) return
+
+    try {
+      const response = await fetch(`/api/repertorios/${addingToRepertorio.id}/cifras`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          cifraId: selectedCifra.id,
+          selectedKey: selectedKey,
+        }),
+      })
+
+      const result = await response.json()
+      if (result.success) {
+        // Recarregar repertórios para mostrar a cifra adicionada
+        await loadRepertorios()
+        setShowAddCifraModal(false)
+        setAddingToRepertorio(null)
+        setSelectedCifra(null)
+        setSelectedKey("")
+      }
+    } catch (error) {
+      console.error('Erro ao adicionar cifra ao repertório:', error)
+    }
+  }
+
+  const handleMoveCifra = async (repertorioId: string, cifraId: string, direction: 'up' | 'down') => {
+    try {
+      console.log('=== MOVENDO CIFRA ===')
+      console.log('repertorioId:', repertorioId)
+      console.log('cifraId:', cifraId)
+      console.log('direction:', direction)
+      
+      const response = await fetch(`/api/repertorios/${repertorioId}/cifras/${cifraId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ direction })
+      })
+
+      console.log('Status da resposta:', response.status)
+      
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('Erro HTTP:', response.status, errorText)
+        
+        // Se for erro 400 (posição inválida), não mostrar erro no console
+        if (response.status === 400) {
+          console.log('Movimento não permitido - posição inválida')
+          return
+        }
+        return
+      }
+
+      const result = await response.json()
+      console.log('Resultado da API:', result)
+      
+      if (result.success) {
+        // Atualizar o estado local imediatamente
+        if (viewingRepertorio) {
+          const updatedRepertorio = { ...viewingRepertorio }
+          const currentIndex = updatedRepertorio.cifras.findIndex(c => c.cifra.id === cifraId)
+          const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1
+          
+          if (newIndex >= 0 && newIndex < updatedRepertorio.cifras.length) {
+            // Trocar as cifras de posição no array
+            const cifras = [...updatedRepertorio.cifras]
+            const temp = cifras[currentIndex]
+            cifras[currentIndex] = cifras[newIndex]
+            cifras[newIndex] = temp
+            
+            setViewingRepertorio({
+              ...updatedRepertorio,
+              cifras
+            })
+          }
+        }
+        
+        await loadRepertorios()
+        console.log('Cifra movida com sucesso')
+      } else {
+        console.error('Erro na resposta da API:', result)
+      }
+    } catch (error) {
+      console.error('Erro ao mover cifra:', error)
+    }
+  }
+
+  const handleRemoveCifraFromRepertorio = async (repertorioId: string, cifraId: string) => {
+    try {
+      console.log('=== REMOVENDO CIFRA ===')
+      console.log('repertorioId:', repertorioId)
+      console.log('cifraId:', cifraId)
+      console.log('Tipo repertorioId:', typeof repertorioId)
+      console.log('Tipo cifraId:', typeof cifraId)
+      
+      const url = `/api/repertorios/${repertorioId}/cifras/${cifraId}`
+      console.log('URL da requisição:', url)
+      
+      const response = await fetch(url, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      console.log('Status da resposta:', response.status)
+      console.log('Response ok:', response.ok)
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('Erro HTTP:', response.status, errorText)
+        return
+      }
+
+      const result = await response.json()
+      console.log('Resultado da API:', result)
+      
+      if (result.success) {
+        // Atualizar o estado local imediatamente
+        if (viewingRepertorio) {
+          const updatedRepertorio = { ...viewingRepertorio }
+          updatedRepertorio.cifras = updatedRepertorio.cifras.filter(c => c.cifra.id !== cifraId)
+          setViewingRepertorio(updatedRepertorio)
+        }
+        
+        await loadRepertorios()
+        console.log('Cifra removida com sucesso')
+      } else {
+        console.error('Erro na resposta da API:', result)
+      }
+    } catch (error) {
+      console.error('Erro ao remover cifra do repertório:', error)
+    }
+  }
+
   const filteredRepertorios = repertorios.filter((repertorio) =>
     repertorio.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     repertorio.description?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -191,6 +342,14 @@ export default function RepertorioPage() {
               onClick={() => setViewingRepertorio(repertorio)}
             >
               <Eye className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => openAddCifraModal(repertorio)}
+              title="Adicionar cifra"
+            >
+              <Plus className="w-4 h-4" />
             </Button>
             <Button
               variant="ghost"
@@ -363,6 +522,218 @@ export default function RepertorioPage() {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de adicionar cifra */}
+      <Dialog open={showAddCifraModal} onOpenChange={setShowAddCifraModal}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              Adicionar Cifra ao Repertório
+              {addingToRepertorio && (
+                <span className="text-sm font-normal text-muted-foreground ml-2">
+                  - {addingToRepertorio.name}
+                </span>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Selecionar Cifra</label>
+              <div className="grid gap-2 max-h-60 overflow-y-auto border rounded-md p-2">
+                {cifras.map((cifra) => (
+                  <div
+                    key={cifra.id}
+                    className={`p-3 rounded-md border cursor-pointer transition-colors ${
+                      selectedCifra?.id === cifra.id
+                        ? 'border-primary bg-primary/5'
+                        : 'hover:bg-muted'
+                    }`}
+                    onClick={() => {
+                      setSelectedCifra(cifra)
+                      setSelectedKey(cifra.currentKey)
+                    }}
+                  >
+                    <div className="font-medium">{cifra.title}</div>
+                    <div className="text-sm text-muted-foreground">{cifra.artist}</div>
+                    <div className="text-xs text-muted-foreground">
+                      Tom original: {cifra.currentKey}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {selectedCifra && (
+              <div>
+                <label className="text-sm font-medium">Tom para o Repertório</label>
+                <Select value={selectedKey} onValueChange={setSelectedKey}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o tom" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {NOTES.map((note) => (
+                      <SelectItem key={note} value={note}>
+                        {note}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Tom original: {selectedCifra.currentKey}
+                  {selectedKey !== selectedCifra.currentKey && (
+                    <span className="ml-2 text-primary">
+                      (transposição: {getSemitonesDifference(selectedCifra.currentKey, selectedKey) > 0 ? '+' : ''}{getSemitonesDifference(selectedCifra.currentKey, selectedKey)})
+                    </span>
+                  )}
+                </p>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowAddCifraModal(false)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleAddCifraToRepertorio}
+                disabled={!selectedCifra || !selectedKey}
+              >
+                Adicionar Cifra
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de visualização de repertório */}
+      <Dialog open={!!viewingRepertorio} onOpenChange={() => setViewingRepertorio(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-center">
+              <div className="space-y-1">
+                <h2 className="text-2xl font-bold">{viewingRepertorio?.name}</h2>
+                {viewingRepertorio?.description && (
+                  <p className="text-muted-foreground">{viewingRepertorio.description}</p>
+                )}
+                <div className="flex justify-center gap-2">
+                  <Badge variant="secondary" className="text-xs">
+                    {viewingRepertorio?.cifras.length} cifra{viewingRepertorio?.cifras.length !== 1 ? 's' : ''}
+                  </Badge>
+                </div>
+              </div>
+            </DialogTitle>
+          </DialogHeader>
+
+
+          {/* Lista de cifras do repertório */}
+          <div className="space-y-4">
+            {viewingRepertorio?.cifras.map((repertorioCifra, index) => {
+              const cifra = repertorioCifra.cifra
+              const finalTransposition = getSemitonesDifference(cifra.currentKey, repertorioCifra.selectedKey)
+              const transposedLyrics = finalTransposition !== 0 
+                ? transposeLyrics(cifra.lyrics, finalTransposition)
+                : cifra.lyrics
+
+              return (
+                <div key={repertorioCifra.id} className="border rounded-lg p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-lg">{cifra.title}</h3>
+                      <p className="text-muted-foreground">{cifra.artist}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge variant="outline" className="text-xs">
+                          Tom original: {cifra.currentKey}
+                        </Badge>
+                        <Badge variant="outline" className="text-xs">
+                          Tom repertório: {repertorioCifra.selectedKey}
+                        </Badge>
+                        {finalTransposition !== 0 && (
+                          <Badge variant="secondary" className="text-xs">
+                            Transposição: {finalTransposition > 0 ? '+' : ''}{finalTransposition}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="text-sm text-muted-foreground">
+                        #{index + 1}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="whitespace-pre-wrap font-mono text-sm leading-relaxed border rounded-lg p-4 bg-muted/20">
+                    {transposedLyrics.split(/(\[[^\]]+\])/).map((part, partIndex) => {
+                      if (part.match(/^\[[^\]]+\]$/)) {
+                        return (
+                          <span key={partIndex} className="text-primary font-bold bg-primary/10 px-1 rounded">
+                            {part.slice(1, -1)}
+                          </span>
+                        )
+                      }
+                      return part
+                    })}
+                  </div>
+                  
+                  {/* Controles simples */}
+                  <div className="flex justify-end gap-2 mt-3 pt-3 border-t">
+                    <button
+                      onClick={() => {
+                        console.log('Mover para cima:', { repertorioId: viewingRepertorio?.id, cifraId: cifra.id, index })
+                        if (viewingRepertorio && index > 0) {
+                          handleMoveCifra(viewingRepertorio.id, cifra.id, 'up')
+                        } else {
+                          console.log('Não é possível subir - já está na primeira posição')
+                        }
+                      }}
+                      disabled={index === 0}
+                      className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      ↑ Subir
+                    </button>
+                    <button
+                      onClick={() => {
+                        console.log('Mover para baixo:', { repertorioId: viewingRepertorio?.id, cifraId: cifra.id, index })
+                        if (viewingRepertorio && index < viewingRepertorio.cifras.length - 1) {
+                          handleMoveCifra(viewingRepertorio.id, cifra.id, 'down')
+                        } else {
+                          console.log('Não é possível descer - já está na última posição')
+                        }
+                      }}
+                      disabled={index === viewingRepertorio!.cifras.length - 1}
+                      className="px-3 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      ↓ Descer
+                    </button>
+                    <button
+                      onClick={() => {
+                        console.log('Remover cifra:', { repertorioId: viewingRepertorio?.id, cifraId: cifra.id })
+                        if (viewingRepertorio) {
+                          handleRemoveCifraFromRepertorio(viewingRepertorio.id, cifra.id)
+                        }
+                      }}
+                      className="px-3 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200"
+                    >
+                      ✕ Remover
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          {viewingRepertorio?.cifras.length === 0 && (
+            <div className="text-center py-8">
+              <Music className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Nenhuma cifra no repertório</h3>
+              <p className="text-muted-foreground">
+                Adicione cifras usando o botão + no card do repertório
+              </p>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

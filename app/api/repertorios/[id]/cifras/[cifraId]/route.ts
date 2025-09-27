@@ -6,7 +6,8 @@ const prisma = new PrismaClient()
 
 const repertorioCifraUpdateSchema = z.object({
   selectedKey: z.string().min(1, 'Tom selecionado é obrigatório').optional(),
-  order: z.number().int().min(0).optional()
+  order: z.number().int().min(0).optional(),
+  direction: z.enum(['up', 'down']).optional()
 })
 
 // PUT - Atualizar cifra no repertório
@@ -36,7 +37,45 @@ export async function PUT(
       )
     }
 
-    // Atualizar cifra no repertório
+    // Se é um movimento, trocar ordens
+    if (validatedData.direction) {
+      // Buscar todas as cifras do repertório ordenadas
+      const allCifras = await prisma.repertorioCifra.findMany({
+        where: { repertorioId: id },
+        orderBy: { order: 'asc' }
+      })
+
+      const currentIndex = allCifras.findIndex(c => c.id === existingCifra.id)
+      const targetIndex = validatedData.direction === 'up' ? currentIndex - 1 : currentIndex + 1
+
+      if (targetIndex < 0 || targetIndex >= allCifras.length) {
+        return NextResponse.json(
+          { error: 'Posição inválida para movimento' },
+          { status: 400 }
+        )
+      }
+
+      const targetCifra = allCifras[targetIndex]
+
+      // Trocar as ordens
+      await prisma.$transaction([
+        prisma.repertorioCifra.update({
+          where: { id: existingCifra.id },
+          data: { order: targetCifra.order }
+        }),
+        prisma.repertorioCifra.update({
+          where: { id: targetCifra.id },
+          data: { order: existingCifra.order }
+        })
+      ])
+
+      return NextResponse.json({
+        success: true,
+        message: 'Cifra movida com sucesso'
+      })
+    }
+
+    // Atualização normal (tom ou ordem específica)
     const repertorioCifra = await prisma.repertorioCifra.update({
       where: {
         repertorioId_cifraId: {
