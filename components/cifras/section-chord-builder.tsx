@@ -101,10 +101,16 @@ export function SectionChordBuilder({ onAddSection, onChordSelect, initialSectio
   const addSection = () => {
     if (!sectionName.trim() || !chordSequence.trim()) return
 
+    // Remove o último separador da sequência de acordes
+    let cleanChords = chordSequence.trim()
+    
+    // Remove separadores do final ( /  ou  → )
+    cleanChords = cleanChords.replace(/\s*[\/→]\s*$/, '')
+
     const newSection: ChordSection = {
       id: Date.now().toString(),
       name: sectionName.trim(),
-      chords: chordSequence.trim(),
+      chords: cleanChords,
       repetition: repetition > 1 ? repetition : undefined
     }
 
