@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { CifraEditor } from "@/components/cifras/cifra-editor"
 import { transposeLyrics, getSemitonesDifference, NOTES } from "@/lib/music-utils"
-import { Plus, Search, Music, Filter, Edit, Trash2, Eye, Minus } from "lucide-react"
+import { Plus, Search, Music, Filter, Edit, Trash2, Eye, Minus, Printer } from "lucide-react"
 
 interface Cifra {
   id: string
@@ -196,6 +196,141 @@ export default function Dashboard() {
     }
   }
 
+  const getCurrentKey = (originalKey: string, offset: number) => {
+    if (offset === 0) return originalKey
+    
+    const originalIndex = NOTES.indexOf(originalKey)
+    if (originalIndex === -1) return originalKey
+    
+    const newIndex = (originalIndex + offset + 12) % 12
+    return NOTES[newIndex]
+  }
+
+  const handlePrintCifra = (cifra: Cifra) => {
+    const printWindow = window.open('', '_blank')
+    if (!printWindow) return
+
+    const currentKey = getCurrentKey(cifra.originalKey, transpositionOffset)
+    const transposedLyrics = transpositionOffset !== 0 
+      ? transposeLyrics(cifra.lyrics, transpositionOffset)
+      : cifra.lyrics
+
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>${cifra.title} - ${cifra.artist}</title>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              margin: 20px;
+              line-height: 1.6;
+            }
+            .header {
+              text-align: center;
+              border-bottom: 2px solid #333;
+              padding-bottom: 20px;
+              margin-bottom: 30px;
+            }
+            .cifra-title {
+              font-size: 32px;
+              font-weight: bold;
+              margin-bottom: 10px;
+            }
+            .cifra-artist {
+              font-size: 20px;
+              color: #666;
+              margin-bottom: 15px;
+            }
+            .cifra-info {
+              display: flex;
+              justify-content: center;
+              gap: 30px;
+              font-size: 16px;
+              color: #666;
+            }
+            .cifra-content {
+              font-family: 'Courier New', monospace;
+              font-size: 16px;
+              white-space: pre-wrap;
+              line-height: 2;
+              text-align: left;
+            }
+            .chord {
+              background-color: #f0f0f0;
+              padding: 3px 6px;
+              border-radius: 4px;
+              font-weight: bold;
+            }
+            .notes {
+              background-color: #f8f9fa;
+              padding: 15px;
+              border-radius: 8px;
+              margin-bottom: 20px;
+              border-left: 4px solid #007bff;
+            }
+            .notes-title {
+              font-weight: bold;
+              margin-bottom: 10px;
+              color: #007bff;
+            }
+            .tags {
+              display: flex;
+              flex-wrap: wrap;
+              gap: 8px;
+              margin-top: 20px;
+              justify-content: center;
+            }
+            .tag {
+              background-color: #e9ecef;
+              padding: 4px 12px;
+              border-radius: 20px;
+              font-size: 14px;
+              color: #495057;
+            }
+            @media print {
+              body { margin: 0; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div class="cifra-title">${cifra.title}</div>
+            <div class="cifra-artist">${cifra.artist}</div>
+            <div class="cifra-info">
+              <span><strong>Tom Original:</strong> ${cifra.originalKey}</span>
+              <span><strong>Tom Atual:</strong> ${currentKey}</span>
+              ${transpositionOffset !== 0 ? `<span><strong>Transposição:</strong> ${transpositionOffset > 0 ? '+' : ''}${transpositionOffset}</span>` : ''}
+              ${cifra.capoPosition > 0 ? `<span><strong>Capotraste:</strong> ${cifra.capoPosition}ª casa</span>` : ''}
+            </div>
+          </div>
+          
+          ${cifra.notes ? `
+            <div class="notes">
+              <div class="notes-title">Notas:</div>
+              <div>${cifra.notes}</div>
+            </div>
+          ` : ''}
+          
+          <div class="cifra-content">${transposedLyrics.replace(/\[([^\]]+)\]/g, '<span class="chord">[$1]</span>')}</div>
+          
+          ${cifra.tags && cifra.tags.length > 0 ? `
+            <div class="tags">
+              ${cifra.tags.map((tag: any) => `
+                <span class="tag">${typeof tag === 'string' ? tag : tag.name || tag.tag?.name}</span>
+              `).join('')}
+            </div>
+          ` : ''}
+        </body>
+      </html>
+    `
+
+    printWindow.document.write(printContent)
+    printWindow.document.close()
+    printWindow.focus()
+    printWindow.print()
+  }
+
   const toggleTag = (tagName: string) => {
     setSelectedTags((prev) => (prev.includes(tagName) ? prev.filter((t) => t !== tagName) : [...prev, tagName]))
   }
@@ -221,6 +356,14 @@ export default function Dashboard() {
               }}
             >
               <Edit className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handlePrintCifra(cifra)}
+              className="text-blue-600 hover:text-blue-700"
+            >
+              <Printer className="w-4 h-4" />
             </Button>
             <Button
               variant="ghost"

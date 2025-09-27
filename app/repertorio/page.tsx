@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Plus, Search, Music, Filter, Edit, Trash2, Eye, Play, ChevronUp, ChevronDown, X } from "lucide-react"
+import { Plus, Search, Music, Filter, Edit, Trash2, Eye, Play, ChevronUp, ChevronDown, X, Printer } from "lucide-react"
 import { NOTES, getSemitonesDifference, transposeLyrics } from "@/lib/music-utils"
 
 interface Repertorio {
@@ -310,6 +310,132 @@ export default function RepertorioPage() {
     } catch (error) {
       console.error('Erro ao remover cifra do repertório:', error)
     }
+  }
+
+  const handlePrintRepertorio = () => {
+    if (!viewingRepertorio) return
+
+    const printWindow = window.open('', '_blank')
+    if (!printWindow) return
+
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>${viewingRepertorio.name}</title>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              margin: 20px;
+              line-height: 1.6;
+            }
+            .header {
+              text-align: center;
+              border-bottom: 2px solid #333;
+              padding-bottom: 20px;
+              margin-bottom: 30px;
+            }
+            .repertorio-title {
+              font-size: 28px;
+              font-weight: bold;
+              margin-bottom: 10px;
+            }
+            .repertorio-description {
+              font-size: 16px;
+              color: #666;
+            }
+            .cifra {
+              page-break-inside: avoid;
+              margin-bottom: 40px;
+              border: 1px solid #ddd;
+              padding: 20px;
+              border-radius: 8px;
+            }
+            .cifra-header {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 15px;
+              padding-bottom: 10px;
+              border-bottom: 1px solid #eee;
+            }
+            .cifra-title {
+              font-size: 20px;
+              font-weight: bold;
+            }
+            .cifra-artist {
+              font-size: 16px;
+              color: #666;
+            }
+            .cifra-info {
+              display: flex;
+              gap: 15px;
+              font-size: 14px;
+              color: #666;
+            }
+            .cifra-content {
+              font-family: 'Courier New', monospace;
+              font-size: 14px;
+              white-space: pre-wrap;
+              line-height: 1.8;
+            }
+            .chord {
+              background-color: #f0f0f0;
+              padding: 2px 4px;
+              border-radius: 3px;
+              font-weight: bold;
+            }
+            .order {
+              font-size: 14px;
+              color: #999;
+            }
+            @media print {
+              body { margin: 0; }
+              .cifra { page-break-inside: avoid; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div class="repertorio-title">${viewingRepertorio.name}</div>
+            ${viewingRepertorio.description ? `<div class="repertorio-description">${viewingRepertorio.description}</div>` : ''}
+          </div>
+          
+          ${viewingRepertorio.cifras.map((repertorioCifra, index) => {
+            const cifra = repertorioCifra.cifra
+            const finalTransposition = getSemitonesDifference(cifra.currentKey, repertorioCifra.selectedKey)
+            const transposedLyrics = finalTransposition !== 0 
+              ? transposeLyrics(cifra.lyrics, finalTransposition)
+              : cifra.lyrics
+
+            return `
+              <div class="cifra">
+                <div class="cifra-header">
+                  <div>
+                    <div class="cifra-title">${cifra.title}</div>
+                    <div class="cifra-artist">${cifra.artist}</div>
+                  </div>
+                  <div class="order">#${index + 1}</div>
+                </div>
+                
+                <div class="cifra-info">
+                  <span><strong>Tom Original:</strong> ${cifra.currentKey}</span>
+                  <span><strong>Tom no Repertório:</strong> ${repertorioCifra.selectedKey}</span>
+                  ${finalTransposition !== 0 ? `<span><strong>Transposição:</strong> ${finalTransposition > 0 ? '+' : ''}${finalTransposition}</span>` : ''}
+                </div>
+                
+                <div class="cifra-content">${transposedLyrics.replace(/\[([^\]]+)\]/g, '<span class="chord">[$1]</span>')}</div>
+              </div>
+            `
+          }).join('')}
+        </body>
+      </html>
+    `
+
+    printWindow.document.write(printContent)
+    printWindow.document.close()
+    printWindow.focus()
+    printWindow.print()
   }
 
   const filteredRepertorios = repertorios.filter((repertorio) =>
@@ -628,6 +754,18 @@ export default function RepertorioPage() {
             </DialogTitle>
           </DialogHeader>
 
+          {/* Botões de ação */}
+          <div className="flex justify-center gap-2 mb-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePrintRepertorio}
+              className="flex items-center gap-2"
+            >
+              <Printer className="w-4 h-4" />
+              Imprimir Repertório
+            </Button>
+          </div>
 
           {/* Lista de cifras do repertório */}
           <div className="space-y-4">
