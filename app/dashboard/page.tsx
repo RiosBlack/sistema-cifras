@@ -44,6 +44,7 @@ export default function Dashboard() {
   const [showEditor, setShowEditor] = useState(false)
   const [editingCifra, setEditingCifra] = useState<Cifra | null>(null)
   const [viewingCifra, setViewingCifra] = useState<Cifra | null>(null)
+  const [deletingCifra, setDeletingCifra] = useState<Cifra | null>(null)
 
   // Carregar dados da API
   useEffect(() => {
@@ -161,19 +162,27 @@ export default function Dashboard() {
     }
   }
 
-  const handleDeleteCifra = async (id: string) => {
+  const handleDeleteCifra = (cifra: Cifra) => {
+    setDeletingCifra(cifra)
+  }
+
+  const confirmDeleteCifra = async () => {
+    if (!deletingCifra) return
+
     try {
-      const response = await fetch(`/api/cifras/${id}`, {
+      const response = await fetch(`/api/cifras/${deletingCifra.id}`, {
         method: 'DELETE',
       })
 
       const result = await response.json()
       
       if (result.success) {
-        setCifras((prev) => prev.filter((c) => c.id !== id))
+        setCifras((prev) => prev.filter((c) => c.id !== deletingCifra.id))
       }
     } catch (error) {
       console.error('Erro ao deletar cifra:', error)
+    } finally {
+      setDeletingCifra(null)
     }
   }
 
@@ -206,7 +215,7 @@ export default function Dashboard() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => handleDeleteCifra(cifra.id)}
+              onClick={() => handleDeleteCifra(cifra)}
               className="text-destructive hover:text-destructive"
             >
               <Trash2 className="w-4 h-4" />
@@ -378,6 +387,37 @@ export default function Dashboard() {
 
       {/* Visualizador */}
       {renderCifraViewer()}
+
+      {/* Modal de confirmação de exclusão */}
+      <Dialog open={!!deletingCifra} onOpenChange={() => setDeletingCifra(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirmar Exclusão</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Tem certeza que deseja excluir a cifra <strong>"{deletingCifra?.title}"</strong> de <strong>{deletingCifra?.artist}</strong>?
+            </p>
+            <p className="text-xs text-destructive">
+              Esta ação não pode ser desfeita.
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setDeletingCifra(null)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={confirmDeleteCifra}
+              >
+                Excluir
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
