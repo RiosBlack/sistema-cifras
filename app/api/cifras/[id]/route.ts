@@ -15,7 +15,8 @@ const cifraUpdateSchema = z.object({
   chords: z.any().optional(),
   chordsOriginal: z.any().optional(),
   notes: z.string().optional(),
-  tags: z.array(z.string()).optional()
+  tags: z.array(z.string()).optional(),
+  userId: z.string().optional() // Adicionar userId como opcional
 })
 
 // GET - Buscar cifra por ID
@@ -86,11 +87,15 @@ export async function PUT(
       )
     }
 
-    // Atualizar cifra
+    // Separar tags dos outros dados
+    const { tags, ...cifraData } = validatedData
+    
+    // Atualizar cifra (sem tags)
+    
     const cifra = await prisma.cifra.update({
       where: { id: params.id },
       data: {
-        ...validatedData,
+        ...cifraData,
         updatedAt: new Date()
       },
       include: {
@@ -108,6 +113,7 @@ export async function PUT(
         }
       }
     })
+    
 
     // Atualizar tags se fornecidas
     if (validatedData.tags !== undefined) {
@@ -165,6 +171,7 @@ export async function PUT(
       }
     })
 
+    
     return NextResponse.json({
       success: true,
       data: cifraCompleta
@@ -174,14 +181,16 @@ export async function PUT(
     console.error('Erro ao atualizar cifra:', error)
     
     if (error instanceof z.ZodError) {
+      console.error('Erro de validação Zod:', error.errors)
       return NextResponse.json(
         { error: 'Dados inválidos', details: error.errors },
         { status: 400 }
       )
     }
     
+    console.error('Erro interno:', error)
     return NextResponse.json(
-      { error: 'Erro interno do servidor' },
+      { error: 'Erro interno do servidor', details: error instanceof Error ? error.message : 'Erro desconhecido' },
       { status: 500 }
     )
   }

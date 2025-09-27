@@ -35,9 +35,11 @@ interface ChordSection {
 interface SectionChordBuilderProps {
   onAddSection: (section: ChordSection) => void
   onChordSelect?: (chord: string) => void
+  initialSections?: ChordSection[]
+  onSectionsChange?: (sections: ChordSection[]) => void
 }
 
-export function SectionChordBuilder({ onAddSection, onChordSelect }: SectionChordBuilderProps) {
+export function SectionChordBuilder({ onAddSection, onChordSelect, initialSections = [], onSectionsChange }: SectionChordBuilderProps) {
   const [sectionName, setSectionName] = useState("")
   const [chordSequence, setChordSequence] = useState("")
   const [repetition, setRepetition] = useState(1)
@@ -45,6 +47,20 @@ export function SectionChordBuilder({ onAddSection, onChordSelect }: SectionChor
   const [selectedChord, setSelectedChord] = useState("")
   const [selectedSeparator, setSelectedSeparator] = useState<" / " | " → " | null>(null)
   const chordInputRef = useRef<HTMLInputElement>(null)
+
+  // Carregar seções iniciais quando o componente for montado
+  useEffect(() => {
+    if (initialSections.length > 0) {
+      setSections(initialSections)
+    }
+  }, [initialSections])
+
+  // Notificar o editor quando as seções mudarem
+  useEffect(() => {
+    if (onSectionsChange) {
+      onSectionsChange(sections)
+    }
+  }, [sections, onSectionsChange])
 
   const commonSections = ["Intro", "A", "B", "C", "D", "Refrão", "Ponte", "Solo", "Outro"]
 

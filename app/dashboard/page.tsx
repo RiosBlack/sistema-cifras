@@ -90,32 +90,51 @@ export default function Dashboard() {
 
   const handleSaveCifra = async (data: any) => {
     try {
-      console.log('handleSaveCifra chamado com:', data)
       
       const userId = "cmg2h8hjz0000xntvzqw0hteh" // ID do usuário teste@exemplo.com
       
       if (editingCifra) {
-        console.log('Editando cifra existente:', editingCifra.id)
+        
+        const requestData = {
+          ...data,
+          userId
+        }
+        
         // Atualizar cifra existente
         const response = await fetch(`/api/cifras/${editingCifra.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            ...data,
-            userId
-          }),
+          body: JSON.stringify(requestData),
         })
 
-        const result = await response.json()
-        console.log('Resposta da API (editar):', result)
         
-        if (result.success) {
+        if (!response.ok) {
+          console.error('Erro HTTP:', response.status, response.statusText)
+          const errorText = await response.text()
+          console.error('Conteúdo do erro:', errorText)
+          return
+        }
+        
+        let result
+        try {
+          result = await response.json()
+        } catch (jsonError) {
+          console.error('Erro ao fazer parse do JSON:', jsonError)
+          const responseText = await response.text()
+          console.error('Resposta como texto:', responseText)
+          return
+        }
+        
+        if (result && result.success) {
           setCifras((prev) => prev.map((c) => (c.id === editingCifra.id ? result.data : c)))
+          // Recarregar a lista para garantir que está atualizada
+          await loadCifras()
+        } else {
+          console.error('Erro na resposta da API:', result)
         }
       } else {
-        console.log('Criando nova cifra')
         // Criar nova cifra
         const response = await fetch('/api/cifras', {
           method: 'POST',
@@ -129,7 +148,6 @@ export default function Dashboard() {
         })
 
         const result = await response.json()
-        console.log('Resposta da API (criar):', result)
         
         if (result.success) {
           setCifras((prev) => [result.data, ...prev])

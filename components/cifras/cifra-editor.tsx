@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -72,6 +72,60 @@ export function CifraEditor({ initialData, availableTags, onSave, onCancel }: Ci
   const [newTag, setNewTag] = useState("")
   const [activeTab, setActiveTab] = useState("edit")
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const [chordSections, setChordSections] = useState<Array<{id: string, name: string, chords: string, repetition?: number}>>([])
+  const [currentSections, setCurrentSections] = useState<Array<{id: string, name: string, chords: string, repetition?: number}>>([])
+
+  // Função para extrair seções de acordes da cifra existente
+  const extractChordSections = (lyrics: string) => {
+    const sections: Array<{id: string, name: string, chords: string, repetition?: number}> = []
+    
+    
+    // Dividir por linhas e processar cada uma
+    const lines = lyrics.split('\n')
+    
+    lines.forEach((line, index) => {
+      const trimmedLine = line.trim()
+      
+      // Procurar por padrões de seção com dois pontos
+      const colonMatch = trimmedLine.match(/^([A-Za-zÀ-ÿ\s]+):\s*(.+)$/)
+      if (colonMatch) {
+        const sectionName = colonMatch[1].trim()
+        const chords = colonMatch[2].trim()
+        
+        // Verificar se contém acordes (pelo menos um padrão de acorde)
+        if (chords.match(/[A-G][#b]?/)) {
+          sections.push({
+            id: `section-${Date.now()}-${Math.random()}-${index}`,
+            name: sectionName,
+            chords: chords
+          })
+        }
+      } else {
+        // Procurar por padrões sem dois pontos (nome seguido de acordes)
+        const spaceMatch = trimmedLine.match(/^([A-Za-zÀ-ÿ\s]+)\s+([A-G][#b]?.+)$/)
+        if (spaceMatch) {
+          const sectionName = spaceMatch[1].trim()
+          const chords = spaceMatch[2].trim()
+          
+          sections.push({
+            id: `section-${Date.now()}-${Math.random()}-${index}`,
+            name: sectionName,
+            chords: chords
+          })
+        }
+      }
+    })
+    
+    return sections
+  }
+
+  // Carregar seções de acordes quando initialData mudar
+  useEffect(() => {
+    if (initialData?.lyrics) {
+      const sections = extractChordSections(initialData.lyrics)
+      setChordSections(sections)
+    }
+  }, [initialData])
 
   const handleInputChange = (field: string, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -244,19 +298,49 @@ export function CifraEditor({ initialData, availableTags, onSave, onCancel }: Ci
     handleInputChange("lyrics", newLyrics)
   }
 
+  const handleSectionsChange = useCallback((sections: Array<{id: string, name: string, chords: string, repetition?: number}>) => {
+    // Evitar loop infinito - só atualizar se as seções realmente mudaram
+    const sectionsChanged = JSON.stringify(sections) !== JSON.stringify(currentSections)
+    if (!sectionsChanged) return
+    
+    setCurrentSections(sections)
+    
+    // Atualizar a letra com as seções atuais
+    const sectionsText = sections.map(section => {
+      return `${section.name}: ${section.chords}${section.repetition && section.repetition > 1 ? ` ${section.repetition}x` : ''}`
+    }).join('\n')
+    
+    // Manter a letra original (sem seções) e adicionar as seções
+    const originalLyrics = formData.lyrics.split('\n').filter(line => {
+      // Remover linhas que são seções de acordes
+      return !line.match(/^[A-Za-zÀ-ÿ\s]+:\s*[A-G][#b]?.+$/)
+    }).join('\n')
+    
+    const newLyrics = originalLyrics + (originalLyrics ? '\n' : '') + sectionsText
+    
+    // Só atualizar se a letra realmente mudou
+    if (newLyrics !== formData.lyrics) {
+      handleInputChange("lyrics", newLyrics)
+    }
+  }, [currentSections, formData.lyrics])
+
   const handleSave = () => {
-    console.log('Dados do formulário:', formData)
     
     const chords = extractChords(formData.lyrics)
-    console.log('Acordes extraídos:', chords)
 
     const dataToSave = {
-      ...formData,
+      title: formData.title,
+      artist: formData.artist,
+      originalKey: formData.originalKey,
+      currentKey: formData.currentKey,
+      capoPosition: formData.capoPosition,
+      lyrics: formData.lyrics,
+      notes: formData.notes,
+      tags: formData.tags,
       chords,
       chordsOriginal: chords, // Backup dos acordes originais
     }
     
-    console.log('Dados para salvar:', dataToSave)
     
     onSave(dataToSave)
   }
@@ -367,7 +451,9 @@ export function CifraEditor({ initialData, availableTags, onSave, onCancel }: Ci
 
                 <SectionChordBuilder
                   onAddSection={handleAddSection}
-                  onChordSelect={true}
+                  onChordSelect={insertChordAtCursor}
+                  initialSections={chordSections}
+                  onSectionsChange={handleSectionsChange}
                 />
 
               </div>
