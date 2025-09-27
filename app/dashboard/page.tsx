@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { CifraEditor } from "@/components/cifras/cifra-editor"
-import { Plus, Search, Music, Filter, Edit, Trash2, Eye } from "lucide-react"
+import { transposeLyrics, getSemitonesDifference, NOTES } from "@/lib/music-utils"
+import { Plus, Search, Music, Filter, Edit, Trash2, Eye, Minus } from "lucide-react"
 
 interface Cifra {
   id: string
@@ -45,12 +46,20 @@ export default function Dashboard() {
   const [editingCifra, setEditingCifra] = useState<Cifra | null>(null)
   const [viewingCifra, setViewingCifra] = useState<Cifra | null>(null)
   const [deletingCifra, setDeletingCifra] = useState<Cifra | null>(null)
+  const [transpositionOffset, setTranspositionOffset] = useState(0)
 
   // Carregar dados da API
   useEffect(() => {
     loadCifras()
     loadTags()
   }, [])
+
+  // Resetar transposição quando abrir uma nova cifra
+  useEffect(() => {
+    if (viewingCifra) {
+      setTranspositionOffset(0)
+    }
+  }, [viewingCifra])
 
   const loadCifras = async () => {
     try {
@@ -253,6 +262,24 @@ export default function Dashboard() {
   const renderCifraViewer = () => {
     if (!viewingCifra) return null
 
+    // Aplicar transposição na letra
+    const transposedLyrics = transpositionOffset !== 0 
+      ? transposeLyrics(viewingCifra.lyrics, transpositionOffset)
+      : viewingCifra.lyrics
+
+    // Calcular o tom atual baseado na transposição
+    const getCurrentKey = () => {
+      if (transpositionOffset === 0) return viewingCifra.currentKey
+      
+      const originalIndex = NOTES.indexOf(viewingCifra.currentKey)
+      if (originalIndex === -1) return viewingCifra.currentKey
+      
+      const newIndex = (originalIndex + transpositionOffset + 12) % 12
+      return NOTES[newIndex]
+    }
+
+    const currentKey = getCurrentKey()
+
     return (
       <Dialog open={!!viewingCifra} onOpenChange={() => setViewingCifra(null)}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -262,7 +289,14 @@ export default function Dashboard() {
                 <h2 className="text-2xl font-bold">{viewingCifra.title}</h2>
                 <p className="text-muted-foreground">{viewingCifra.artist}</p>
                 <div className="flex justify-center gap-2">
-                  <Badge variant="outline">Tom: {viewingCifra.currentKey}</Badge>
+                  <Badge variant="outline">
+                    Tom: {currentKey}
+                    {transpositionOffset !== 0 && (
+                      <span className="ml-1 text-xs">
+                        ({transpositionOffset > 0 ? '+' : ''}{transpositionOffset})
+                      </span>
+                    )}
+                  </Badge>
                   {viewingCifra.capoPosition > 0 && (
                     <Badge variant="outline">Capo: {viewingCifra.capoPosition}ª casa</Badge>
                   )}
@@ -271,8 +305,42 @@ export default function Dashboard() {
             </DialogTitle>
           </DialogHeader>
 
+          {/* Controle de transposição */}
+          <div className="flex items-center justify-center gap-4 p-4 bg-muted/50 rounded-lg">
+            <span className="text-sm font-medium">Transposição:</span>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setTranspositionOffset(prev => Math.max(prev - 1, -12))}
+                disabled={transpositionOffset <= -12}
+              >
+                <Minus className="w-4 h-4" />
+              </Button>
+              <span className="w-12 text-center font-mono text-sm">
+                {transpositionOffset > 0 ? `+${transpositionOffset}` : transpositionOffset}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setTranspositionOffset(prev => Math.min(prev + 1, 12))}
+                disabled={transpositionOffset >= 12}
+              >
+                <Plus className="w-4 h-4" />
+              </Button>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setTranspositionOffset(0)}
+              className="text-xs"
+            >
+              Reset
+            </Button>
+          </div>
+
           <div className="whitespace-pre-wrap font-mono text-sm leading-relaxed border rounded-lg p-4">
-            {viewingCifra.lyrics.split(/(\[[^\]]+\])/).map((part, index) => {
+            {transposedLyrics.split(/(\[[^\]]+\])/).map((part, index) => {
               if (part.match(/^\[[^\]]+\]$/)) {
                 return (
                   <span key={index} className="text-primary font-bold bg-primary/10 px-1 rounded">
