@@ -15,12 +15,10 @@ import { ChordSelector } from "./chord-selector"
 import { TransposeControls } from "./transpose-controls"
 import { Save, Music, Tag, X } from "lucide-react"
 import { NOTES, transposeLyrics, extractChords, getSemitonesDifference } from "@/lib/music-utils"
-import { ChordLyricAligner } from "./chord-lyric-aligner"
 import { SectionChordBuilder } from "./section-chord-builder"
 
 declare global {
   interface Window {
-    insertChordInAligner?: (chord: string) => void
     insertChordInSectionBuilder?: (chord: string) => void
   }
 }
@@ -61,7 +59,6 @@ export function CifraEditor({ initialData, availableTags, onSave, onCancel }: Ci
 
   const [newTag, setNewTag] = useState("")
   const [activeTab, setActiveTab] = useState("edit")
-  const [constructorMode, setConstructorMode] = useState<"aligner" | "sections">("sections")
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const handleInputChange = (field: string, value: any) => {
@@ -347,51 +344,12 @@ export function CifraEditor({ initialData, availableTags, onSave, onCancel }: Ci
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <Label>Construtor de Cifra</Label>
-                  <div className="flex rounded-lg border p-1">
-                    <Button
-                      variant={constructorMode === "sections" ? "default" : "ghost"}
-                      size="sm"
-                      onClick={() => setConstructorMode("sections")}
-                      className="h-8 px-3"
-                    >
-                      Por Seções
-                    </Button>
-                    <Button
-                      variant={constructorMode === "aligner" ? "default" : "ghost"}
-                      size="sm"
-                      onClick={() => setConstructorMode("aligner")}
-                      className="h-8 px-3"
-                    >
-                      Alinhamento
-                    </Button>
-                  </div>
                 </div>
 
-                {constructorMode === "sections" ? (
-                  <SectionChordBuilder
-                    onAddSection={handleAddSection}
-                    onChordSelect={true}
-                  />
-                ) : (
-                  <div className="space-y-4">
-                    <div className="flex justify-end">
-                      <ChordSelector
-                        onChordSelect={(chord) => {
-                          if (window.insertChordInAligner) {
-                            window.insertChordInAligner(chord)
-                          }
-                        }}
-                      />
-                    </div>
-                    <ChordLyricAligner
-                      onAddLine={(formattedLine) => {
-                        const newLyrics = formData.lyrics ? formData.lyrics + "\n" + formattedLine : formattedLine
-                        handleInputChange("lyrics", newLyrics)
-                      }}
-                      onChordSelect={true}
-                    />
-                  </div>
-                )}
+                <SectionChordBuilder
+                  onAddSection={handleAddSection}
+                  onChordSelect={true}
+                />
 
               </div>
 

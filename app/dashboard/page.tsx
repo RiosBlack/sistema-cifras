@@ -290,6 +290,9 @@ export default function Dashboard() {
       {showEditor && (
         <Dialog open={showEditor} onOpenChange={setShowEditor}>
           <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto p-0">
+            <DialogTitle className="sr-only">
+              {editingCifra ? "Editar Cifra" : "Nova Cifra"}
+            </DialogTitle>
             <CifraEditor
               initialData={editingCifra || undefined}
               availableTags={tags}
