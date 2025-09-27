@@ -7,11 +7,6 @@ import { Music, List, Home } from "lucide-react"
 
 const navigation = [
   {
-    name: "Dashboard",
-    href: "/dashboard",
-    icon: Home
-  },
-  {
     name: "Cifras",
     href: "/dashboard",
     icon: Music

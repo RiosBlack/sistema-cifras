@@ -447,7 +447,7 @@ export default function Dashboard() {
             <DialogTitle className="text-center">
               <div className="space-y-1">
                 <h2 className="text-2xl font-bold">{viewingCifra.title}</h2>
-                <p className="text-muted-foreground">{viewingCifra.artist}</p>
+                <p className="text-muted-foreground pb-2">{viewingCifra.artist}</p>
                 <div className="flex justify-center gap-2">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium">Tom:</span>
