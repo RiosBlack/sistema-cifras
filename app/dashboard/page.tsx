@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { CifraEditor } from "@/components/cifras/cifra-editor"
 import { transposeLyrics, getSemitonesDifference, NOTES } from "@/lib/music-utils"
 import { Plus, Search, Music, Filter, Edit, Trash2, Eye, Minus } from "lucide-react"
@@ -280,6 +281,22 @@ export default function Dashboard() {
 
     const currentKey = getCurrentKey()
 
+    // Função para lidar com mudança de tom
+    const handleKeyChange = (newKey: string) => {
+      if (newKey === viewingCifra.currentKey) {
+        // Se selecionou o tom original, resetar transposição
+        setTranspositionOffset(0)
+      } else {
+        const originalIndex = NOTES.indexOf(viewingCifra.currentKey)
+        const newIndex = NOTES.indexOf(newKey)
+        
+        if (originalIndex !== -1 && newIndex !== -1) {
+          const offset = (newIndex - originalIndex + 12) % 12
+          setTranspositionOffset(offset)
+        }
+      }
+    }
+
     return (
       <Dialog open={!!viewingCifra} onOpenChange={() => setViewingCifra(null)}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -289,14 +306,26 @@ export default function Dashboard() {
                 <h2 className="text-2xl font-bold">{viewingCifra.title}</h2>
                 <p className="text-muted-foreground">{viewingCifra.artist}</p>
                 <div className="flex justify-center gap-2">
-                  <Badge variant="outline">
-                    Tom: {currentKey}
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">Tom:</span>
+                    <Select value={currentKey} onValueChange={handleKeyChange}>
+                      <SelectTrigger className="w-20 h-8">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {NOTES.map((note) => (
+                          <SelectItem key={note} value={note}>
+                            {note}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     {transpositionOffset !== 0 && (
-                      <span className="ml-1 text-xs">
+                      <span className="text-xs text-muted-foreground">
                         ({transpositionOffset > 0 ? '+' : ''}{transpositionOffset})
                       </span>
                     )}
-                  </Badge>
+                  </div>
                   {viewingCifra.capoPosition > 0 && (
                     <Badge variant="outline">Capo: {viewingCifra.capoPosition}ª casa</Badge>
                   )}
