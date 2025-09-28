@@ -292,11 +292,6 @@ export function CifraEditor({ initialData, availableTags, onSave, onCancel }: Ci
     )
   }
 
-  const handleAddSection = (section: any) => {
-    const sectionText = `${section.name}: ${section.chords}${section.repetition ? ` ${section.repetition}x` : ''}`
-    const newLyrics = formData.lyrics ? formData.lyrics + "\n" + sectionText : sectionText
-    handleInputChange("lyrics", newLyrics)
-  }
 
   const handleSectionsChange = useCallback((sections: Array<{id: string, name: string, chords: string, repetition?: number}>) => {
     // Evitar loop infinito - só atualizar se as seções realmente mudaram
@@ -450,7 +445,6 @@ export function CifraEditor({ initialData, availableTags, onSave, onCancel }: Ci
                 </div>
 
                 <SectionChordBuilder
-                  onAddSection={handleAddSection}
                   onChordSelect={insertChordAtCursor}
                   initialSections={chordSections}
                   onSectionsChange={handleSectionsChange}

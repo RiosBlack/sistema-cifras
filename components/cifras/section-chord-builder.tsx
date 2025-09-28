@@ -33,13 +33,12 @@ interface ChordSection {
 }
 
 interface SectionChordBuilderProps {
-  onAddSection: (section: ChordSection) => void
   onChordSelect?: (chord: string) => void
   initialSections?: ChordSection[]
   onSectionsChange?: (sections: ChordSection[]) => void
 }
 
-export function SectionChordBuilder({ onAddSection, onChordSelect, initialSections = [], onSectionsChange }: SectionChordBuilderProps) {
+export function SectionChordBuilder({ onChordSelect, initialSections = [], onSectionsChange }: SectionChordBuilderProps) {
   const [sectionName, setSectionName] = useState("")
   const [chordSequence, setChordSequence] = useState("")
   const [repetition, setRepetition] = useState(1)
@@ -114,8 +113,13 @@ export function SectionChordBuilder({ onAddSection, onChordSelect, initialSectio
       repetition: repetition > 1 ? repetition : undefined
     }
 
-    setSections(prev => [...prev, newSection])
-    onAddSection(newSection)
+    const updatedSections = [...sections, newSection]
+    setSections(updatedSections)
+    
+    // Notificar mudança nas seções
+    if (onSectionsChange) {
+      onSectionsChange(updatedSections)
+    }
 
     // Limpa os campos
     setSectionName("")
@@ -124,7 +128,13 @@ export function SectionChordBuilder({ onAddSection, onChordSelect, initialSectio
   }
 
   const removeSection = (id: string) => {
-    setSections(prev => prev.filter(section => section.id !== id))
+    const updatedSections = sections.filter(section => section.id !== id)
+    setSections(updatedSections)
+    
+    // Notificar mudança nas seções
+    if (onSectionsChange) {
+      onSectionsChange(updatedSections)
+    }
   }
 
   const formatSectionForDisplay = (section: ChordSection): string => {

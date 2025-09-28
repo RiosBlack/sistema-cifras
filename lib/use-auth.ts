@@ -41,6 +41,12 @@ export function useAuth() {
         }
         
         console.log('Usuário salvo no localStorage e cookie')
+        
+        // Forçar atualização da página para garantir hidratação correta
+        if (typeof window !== 'undefined') {
+          window.location.reload()
+        }
+        
         return { success: true }
       } else {
         console.log('Login falhou:', result.error)
@@ -71,7 +77,10 @@ export function useAuth() {
         document.cookie = 'user-session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
       }
       
-      router.push('/')
+      // Forçar atualização da página para garantir limpeza completa
+      if (typeof window !== 'undefined') {
+        window.location.href = '/'
+      }
     }
   }
 
