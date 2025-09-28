@@ -189,9 +189,7 @@ Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para ma
 
 ## 📞 Contato
 
-- **Desenvolvedor**: [Seu Nome]
-- **Email**: [seu-email@exemplo.com]
-- **GitHub**: [@seu-usuario](https://github.com/seu-usuario)
+- **Desenvolvedor**: Douglas Rios
 
 ---
 
