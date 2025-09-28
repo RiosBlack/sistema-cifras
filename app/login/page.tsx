@@ -98,12 +98,6 @@ export default function LoginPage() {
                 {loading ? "Entrando..." : "Entrar"}
               </Button>
             </form>
-
-            <div className="mt-6 text-center text-sm text-muted-foreground">
-              <p>Usuário de teste:</p>
-              <p><strong>Email:</strong> admin@teste.com</p>
-              <p><strong>Senha:</strong> 123456</p>
-            </div>
           </CardContent>
         </Card>
       </div>

@@ -1,7 +1,26 @@
 {
-  "name": "my-v0-project",
-  "version": "0.1.0",
-  "private": true,
+  "name": "sistema-cifras",
+  "version": "1.0.0",
+  "description": "Sistema completo para gerenciamento de cifras musicais",
+  "author": "Douglas Rios",
+  "license": "MIT",
+  "private": false,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/douglasrios/sistema-cifras.git"
+  },
+  "homepage": "https://github.com/douglasrios/sistema-cifras#readme",
+  "keywords": [
+    "cifras",
+    "musica",
+    "acordes",
+    "transposicao",
+    "repertorio",
+    "nextjs",
+    "typescript",
+    "prisma",
+    "postgresql"
+  ],
   "scripts": {
     "build": "next build",
     "dev": "next dev",
