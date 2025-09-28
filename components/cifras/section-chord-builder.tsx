@@ -49,10 +49,10 @@ export function SectionChordBuilder({ onChordSelect, initialSections = [], onSec
 
   // Carregar seções iniciais quando o componente for montado
   useEffect(() => {
-    if (initialSections.length > 0) {
+    if (initialSections.length > 0 && sections.length === 0) {
       setSections(initialSections)
     }
-  }, [initialSections])
+  }, [initialSections, sections.length])
 
   // Notificar o editor quando as seções mudarem
   useEffect(() => {
@@ -116,11 +116,6 @@ export function SectionChordBuilder({ onChordSelect, initialSections = [], onSec
     const updatedSections = [...sections, newSection]
     setSections(updatedSections)
     
-    // Notificar mudança nas seções
-    if (onSectionsChange) {
-      onSectionsChange(updatedSections)
-    }
-
     // Limpa os campos
     setSectionName("")
     setChordSequence("")
@@ -130,11 +125,6 @@ export function SectionChordBuilder({ onChordSelect, initialSections = [], onSec
   const removeSection = (id: string) => {
     const updatedSections = sections.filter(section => section.id !== id)
     setSections(updatedSections)
-    
-    // Notificar mudança nas seções
-    if (onSectionsChange) {
-      onSectionsChange(updatedSections)
-    }
   }
 
   const formatSectionForDisplay = (section: ChordSection): string => {

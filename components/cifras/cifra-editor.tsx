@@ -79,7 +79,6 @@ export function CifraEditor({ initialData, availableTags, onSave, onCancel }: Ci
   const extractChordSections = (lyrics: string) => {
     const sections: Array<{id: string, name: string, chords: string, repetition?: number}> = []
     
-    
     // Dividir por linhas e processar cada uma
     const lines = lyrics.split('\n')
     
@@ -124,6 +123,7 @@ export function CifraEditor({ initialData, availableTags, onSave, onCancel }: Ci
     if (initialData?.lyrics) {
       const sections = extractChordSections(initialData.lyrics)
       setChordSections(sections)
+      setCurrentSections(sections)
     }
   }, [initialData])
 
@@ -300,24 +300,19 @@ export function CifraEditor({ initialData, availableTags, onSave, onCancel }: Ci
     
     setCurrentSections(sections)
     
+    // Se não há seções, não fazer nada
+    if (sections.length === 0) {
+      return
+    }
+    
     // Atualizar a letra com as seções atuais
     const sectionsText = sections.map(section => {
       return `${section.name}: ${section.chords}${section.repetition && section.repetition > 1 ? ` ${section.repetition}x` : ''}`
     }).join('\n')
     
-    // Manter a letra original (sem seções) e adicionar as seções
-    const originalLyrics = formData.lyrics.split('\n').filter(line => {
-      // Remover linhas que são seções de acordes
-      return !line.match(/^[A-Za-zÀ-ÿ\s]+:\s*[A-G][#b]?.+$/)
-    }).join('\n')
-    
-    const newLyrics = originalLyrics + (originalLyrics ? '\n' : '') + sectionsText
-    
-    // Só atualizar se a letra realmente mudou
-    if (newLyrics !== formData.lyrics) {
-      handleInputChange("lyrics", newLyrics)
-    }
-  }, [currentSections, formData.lyrics])
+    // Só usar as seções, sem tentar preservar letra original
+    handleInputChange("lyrics", sectionsText)
+  }, [currentSections])
 
   const handleSave = () => {
     

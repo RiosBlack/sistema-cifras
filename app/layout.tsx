@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
-import { Navigation } from '@/components/navigation'
+import { ConditionalNavigation } from '@/components/conditional-navigation'
 import { AuthProvider } from '@/lib/auth-context'
 import './globals.css'
 
@@ -29,7 +29,7 @@ html {
       </head>
           <body className={`${GeistSans.variable} ${GeistMono.variable}`}>
             <AuthProvider>
-              <Navigation />
+              <ConditionalNavigation />
               {children}
             </AuthProvider>
           </body>
