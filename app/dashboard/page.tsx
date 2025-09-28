@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { CifraEditor } from "@/components/cifras/cifra-editor"
 import { AuthRouteGuard } from "@/components/auth-route-guard"
+import { useAuthContext } from "@/lib/auth-context"
 import { transposeLyrics, getSemitonesDifference, NOTES } from "@/lib/music-utils"
 import { Plus, Search, Music, Filter, Edit, Trash2, Eye, Minus, Printer } from "lucide-react"
 
@@ -40,6 +41,7 @@ interface Tag {
 }
 
 export default function Dashboard() {
+  const { user } = useAuthContext()
   const [cifras, setCifras] = useState<Cifra[]>([])
   const [tags, setTags] = useState<Tag[]>([])
   const [searchTerm, setSearchTerm] = useState("")
@@ -52,9 +54,11 @@ export default function Dashboard() {
 
   // Carregar dados da API
   useEffect(() => {
-    loadCifras()
-    loadTags()
-  }, [])
+    if (user?.id) {
+      loadCifras()
+      loadTags()
+    }
+  }, [user?.id])
 
   // Resetar transposição quando abrir uma nova cifra
   useEffect(() => {
@@ -64,8 +68,10 @@ export default function Dashboard() {
   }, [viewingCifra])
 
   const loadCifras = async () => {
+    if (!user?.id) return
+    
     try {
-      const response = await fetch('/api/cifras?userId=cmg2h8hjz0000xntvzqw0hteh')
+      const response = await fetch(`/api/cifras?userId=${user.id}`)
       const result = await response.json()
       
       if (result.success) {
@@ -77,8 +83,10 @@ export default function Dashboard() {
   }
 
   const loadTags = async () => {
+    if (!user?.id) return
+    
     try {
-      const response = await fetch('/api/tags?userId=cmg2h8hjz0000xntvzqw0hteh')
+      const response = await fetch(`/api/tags?userId=${user.id}`)
       const result = await response.json()
       
       if (result.success) {
@@ -101,9 +109,13 @@ export default function Dashboard() {
   })
 
   const handleSaveCifra = async (data: any) => {
+    if (!user?.id) {
+      console.error('Usuário não logado')
+      return
+    }
+    
     try {
-      
-      const userId = "cmg2h8hjz0000xntvzqw0hteh" // ID do usuário teste@exemplo.com
+      const userId = user.id
       
       if (editingCifra) {
         

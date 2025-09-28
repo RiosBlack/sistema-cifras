@@ -30,10 +30,15 @@ export function useAuth() {
       if (result.success) {
         console.log('Login bem-sucedido, salvando usuário:', result.user)
         setUser(result.user)
-        localStorage.setItem('user', JSON.stringify(result.user))
         
-        // Definir cookie de sessão
-        document.cookie = `user-session=${JSON.stringify(result.user)}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('user', JSON.stringify(result.user))
+        }
+        
+        if (typeof document !== 'undefined') {
+          // Definir cookie de sessão
+          document.cookie = `user-session=${JSON.stringify(result.user)}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`
+        }
         
         console.log('Usuário salvo no localStorage e cookie')
         return { success: true }
@@ -56,10 +61,15 @@ export function useAuth() {
       console.error('Erro no logout:', error)
     } finally {
       setUser(null)
-      localStorage.removeItem('user')
       
-      // Remover cookie de sessão
-      document.cookie = 'user-session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('user')
+      }
+      
+      if (typeof document !== 'undefined') {
+        // Remover cookie de sessão
+        document.cookie = 'user-session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+      }
       
       router.push('/')
     }

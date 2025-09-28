@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Search, Music, Filter, Edit, Trash2, Eye, Play, ChevronUp, ChevronDown, X, Printer } from "lucide-react"
 import { NOTES, getSemitonesDifference, transposeLyrics } from "@/lib/music-utils"
 import { AuthRouteGuard } from "@/components/auth-route-guard"
+import { useAuthContext } from "@/lib/auth-context"
 
 interface Repertorio {
   id: string
@@ -39,6 +40,7 @@ interface Cifra {
 }
 
 export default function RepertorioPage() {
+  const { user } = useAuthContext()
   const [repertorios, setRepertorios] = useState<Repertorio[]>([])
   const [cifras, setCifras] = useState<Cifra[]>([])
   const [searchTerm, setSearchTerm] = useState("")
@@ -57,13 +59,17 @@ export default function RepertorioPage() {
 
   // Carregar dados da API
   useEffect(() => {
-    loadRepertorios()
-    loadCifras()
-  }, [])
+    if (user?.id) {
+      loadRepertorios()
+      loadCifras()
+    }
+  }, [user?.id])
 
   const loadRepertorios = async () => {
+    if (!user?.id) return
+    
     try {
-      const response = await fetch('/api/repertorios?userId=cmg2h8hjz0000xntvzqw0hteh')
+      const response = await fetch(`/api/repertorios?userId=${user.id}`)
       const result = await response.json()
       if (result.success) {
         setRepertorios(result.data)
@@ -74,8 +80,10 @@ export default function RepertorioPage() {
   }
 
   const loadCifras = async () => {
+    if (!user?.id) return
+    
     try {
-      const response = await fetch('/api/cifras?userId=cmg2h8hjz0000xntvzqw0hteh')
+      const response = await fetch(`/api/cifras?userId=${user.id}`)
       const result = await response.json()
       if (result.success) {
         setCifras(result.data)
@@ -97,7 +105,7 @@ export default function RepertorioPage() {
         body: JSON.stringify({
           name: newRepertorioName,
           description: newRepertorioDescription,
-          userId: "cmg2h8hjz0000xntvzqw0hteh"
+          userId: user?.id
         }),
       })
 

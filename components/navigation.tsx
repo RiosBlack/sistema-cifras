@@ -7,6 +7,7 @@ import { Music, List, Home, LogOut, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/lib/use-auth"
 import { useAuthContext } from "@/lib/auth-context"
+import { AuthLoading } from "@/components/auth-loading"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,10 +33,16 @@ const navigation = [
 export function Navigation() {
   const pathname = usePathname()
   const { logout } = useAuth()
-  const { user, isAuthenticated } = useAuthContext()
+  const { user, isAuthenticated, loading } = useAuthContext()
   
   console.log('Navigation - user:', user)
   console.log('Navigation - isAuthenticated:', isAuthenticated)
+  console.log('Navigation - loading:', loading)
+
+  // Evitar hidratação incorreta
+  if (loading) {
+    return <AuthLoading />
+  }
 
   return (
     <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
