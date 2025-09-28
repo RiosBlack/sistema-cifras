@@ -1,0 +1,60 @@
+# Dependencies
+node_modules/
+
+# Development files
+.env
+.env.local
+.env.development.local
+.env.test.local
+
+# Build artifacts
+.next/
+out/
+build/
+dist/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Docker
+docker-compose.yml
+Dockerfile
+
+# Scripts (não necessários em produção)
+scripts/
+
+# Documentation
+README.md
+CONTRIBUTING.md
+LICENSE
+
+# Prisma migrations (serão executadas via build command)
+prisma/migrations/
