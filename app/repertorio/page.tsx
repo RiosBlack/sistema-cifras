@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Plus, Search, Music, Filter, Edit, Trash2, Eye, Play, ChevronUp, ChevronDown, X, Printer } from "lucide-react"
 import { NOTES, getSemitonesDifference, transposeLyrics } from "@/lib/music-utils"
+import { AuthRouteGuard } from "@/components/auth-route-guard"
 
 interface Repertorio {
   id: string
@@ -499,7 +500,8 @@ export default function RepertorioPage() {
   )
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <AuthRouteGuard requireAuth={true}>
+      <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Repertórios</h1>
@@ -875,5 +877,6 @@ export default function RepertorioPage() {
         </DialogContent>
       </Dialog>
     </div>
+    </AuthRouteGuard>
   )
 }

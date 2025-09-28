@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
 import { Navigation } from '@/components/navigation'
+import { AuthProvider } from '@/lib/auth-context'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -26,10 +27,12 @@ html {
 }
         `}</style>
       </head>
-      <body className={`${GeistSans.variable} ${GeistMono.variable}`}>
-        <Navigation />
-        {children}
-      </body>
+          <body className={`${GeistSans.variable} ${GeistMono.variable}`}>
+            <AuthProvider>
+              <Navigation />
+              {children}
+            </AuthProvider>
+          </body>
     </html>
   )
 }

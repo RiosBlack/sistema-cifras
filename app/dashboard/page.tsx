@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { CifraEditor } from "@/components/cifras/cifra-editor"
+import { AuthRouteGuard } from "@/components/auth-route-guard"
 import { transposeLyrics, getSemitonesDifference, NOTES } from "@/lib/music-utils"
 import { Plus, Search, Music, Filter, Edit, Trash2, Eye, Minus, Printer } from "lucide-react"
 
@@ -536,7 +537,8 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
+    <AuthRouteGuard requireAuth={true}>
+      <div className="container mx-auto py-6 space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
@@ -658,6 +660,7 @@ export default function Dashboard() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </AuthRouteGuard>
   )
 }
