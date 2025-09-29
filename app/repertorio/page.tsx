@@ -454,14 +454,14 @@ export default function RepertorioPage() {
 
   const renderRepertorioCard = (repertorio: Repertorio) => (
     <Card key={repertorio.id} className="w-full">
-      <CardHeader>
-        <div className="flex items-start justify-between">
-          <div className="space-y-1">
-            <CardTitle className="text-lg">{repertorio.name}</CardTitle>
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1 min-w-0 space-y-1">
+            <CardTitle className="text-base sm:text-lg truncate">{repertorio.name}</CardTitle>
             {repertorio.description && (
-              <p className="text-sm text-muted-foreground">{repertorio.description}</p>
+              <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">{repertorio.description}</p>
             )}
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Badge variant="secondary" className="text-xs">
                 {repertorio.cifras.length} cifra{repertorio.cifras.length !== 1 ? 's' : ''}
               </Badge>
@@ -470,11 +470,12 @@ export default function RepertorioPage() {
               </span>
             </div>
           </div>
-          <div className="flex gap-1">
+          <div className="flex gap-1 flex-shrink-0">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setViewingRepertorio(repertorio)}
+              className="h-8 w-8 p-0"
             >
               <Eye className="w-4 h-4" />
             </Button>
@@ -483,6 +484,7 @@ export default function RepertorioPage() {
               size="sm"
               onClick={() => openAddCifraModal(repertorio)}
               title="Adicionar cifra"
+              className="h-8 w-8 p-0"
             >
               <Plus className="w-4 h-4" />
             </Button>
@@ -490,6 +492,7 @@ export default function RepertorioPage() {
               variant="ghost"
               size="sm"
               onClick={() => openEditModal(repertorio)}
+              className="h-8 w-8 p-0"
             >
               <Edit className="w-4 h-4" />
             </Button>
@@ -497,7 +500,7 @@ export default function RepertorioPage() {
               variant="ghost"
               size="sm"
               onClick={() => setDeletingRepertorio(repertorio)}
-              className="text-destructive hover:text-destructive"
+              className="h-8 w-8 p-0 text-destructive hover:text-destructive"
             >
               <Trash2 className="w-4 h-4" />
             </Button>
@@ -509,15 +512,15 @@ export default function RepertorioPage() {
 
   return (
     <AuthRouteGuard requireAuth={true}>
-      <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="container mx-auto px-4 py-4 sm:p-6 space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Repertórios</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl sm:text-3xl font-bold">Repertórios</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">
             Gerencie suas listas de cifras com tons específicos
           </p>
         </div>
-        <Button onClick={() => setShowCreateModal(true)}>
+        <Button onClick={() => setShowCreateModal(true)} className="w-full sm:w-auto">
           <Plus className="w-4 h-4 mr-2" />
           Novo Repertório
         </Button>
@@ -537,7 +540,7 @@ export default function RepertorioPage() {
       </div>
 
       {/* Lista de repertórios */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {filteredRepertorios.map(renderRepertorioCard)}
       </div>
 
@@ -663,9 +666,9 @@ export default function RepertorioPage() {
 
       {/* Modal de adicionar cifra */}
       <Dialog open={showAddCifraModal} onOpenChange={setShowAddCifraModal}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl mx-4">
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className="text-lg sm:text-xl">
               Adicionar Cifra ao Repertório
               {addingToRepertorio && (
                 <span className="text-sm font-normal text-muted-foreground ml-2">
@@ -681,7 +684,7 @@ export default function RepertorioPage() {
                 {cifras.map((cifra) => (
                   <div
                     key={cifra.id}
-                    className={`p-3 rounded-md border cursor-pointer transition-colors ${
+                    className={`p-2 sm:p-3 rounded-md border cursor-pointer transition-colors ${
                       selectedCifra?.id === cifra.id
                         ? 'border-primary bg-primary/5'
                         : 'hover:bg-muted'
@@ -691,8 +694,8 @@ export default function RepertorioPage() {
                       setSelectedKey(cifra.currentKey)
                     }}
                   >
-                    <div className="font-medium">{cifra.title}</div>
-                    <div className="text-sm text-muted-foreground">{cifra.artist}</div>
+                    <div className="font-medium text-sm sm:text-base truncate">{cifra.title}</div>
+                    <div className="text-xs sm:text-sm text-muted-foreground truncate">{cifra.artist}</div>
                     <div className="text-xs text-muted-foreground">
                       Tom original: {cifra.currentKey}
                     </div>
@@ -727,16 +730,18 @@ export default function RepertorioPage() {
               </div>
             )}
 
-            <div className="flex justify-end gap-2">
+            <div className="flex flex-col sm:flex-row justify-end gap-2">
               <Button
                 variant="outline"
                 onClick={() => setShowAddCifraModal(false)}
+                className="w-full sm:w-auto"
               >
                 Cancelar
               </Button>
               <Button
                 onClick={handleAddCifraToRepertorio}
                 disabled={!selectedCifra || !selectedKey}
+                className="w-full sm:w-auto"
               >
                 Adicionar Cifra
               </Button>
@@ -747,13 +752,13 @@ export default function RepertorioPage() {
 
       {/* Modal de visualização de repertório */}
       <Dialog open={!!viewingRepertorio} onOpenChange={() => setViewingRepertorio(null)}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto mx-4">
           <DialogHeader>
             <DialogTitle className="text-center">
-              <div className="space-y-1">
-                <h2 className="text-2xl font-bold">{viewingRepertorio?.name}</h2>
+              <div className="space-y-2">
+                <h2 className="text-xl sm:text-2xl font-bold">{viewingRepertorio?.name}</h2>
                 {viewingRepertorio?.description && (
-                  <p className="text-muted-foreground">{viewingRepertorio.description}</p>
+                  <p className="text-sm sm:text-base text-muted-foreground">{viewingRepertorio.description}</p>
                 )}
                 <div className="flex justify-center gap-2">
                   <Badge variant="secondary" className="text-xs">
@@ -813,12 +818,19 @@ export default function RepertorioPage() {
                     </div>
                   </div>
                   
-                  <div className="whitespace-pre-wrap font-mono text-sm leading-relaxed border rounded-lg p-4 bg-muted/20">
-                    {transposedLyrics.split(/(\[[^\]]+\])/).map((part, partIndex) => {
+                  <div className="whitespace-pre-wrap font-mono text-base leading-relaxed border rounded-lg p-4 bg-muted/20 font-bold text-orange-500">
+                    {transposedLyrics.split(/(\[[^\]]+\]|^[^:]+:)/gm).map((part, partIndex) => {
                       if (part.match(/^\[[^\]]+\]$/)) {
                         return (
                           <span key={partIndex} className="text-primary font-bold bg-primary/10 px-1 rounded">
                             {part.slice(1, -1)}
+                          </span>
+                        )
+                      }
+                      if (part.match(/^[^:]+:$/)) {
+                        return (
+                          <span key={partIndex} className="text-black font-normal">
+                            {part}
                           </span>
                         )
                       }
@@ -827,7 +839,7 @@ export default function RepertorioPage() {
                   </div>
                   
                   {/* Controles simples */}
-                  <div className="flex justify-end gap-2 mt-3 pt-3 border-t">
+                  <div className="flex flex-wrap justify-end gap-2 mt-3 pt-3 border-t">
                     <button
                       onClick={() => {
                         console.log('Mover para cima:', { repertorioId: viewingRepertorio?.id, cifraId: cifra.id, index })
@@ -838,7 +850,7 @@ export default function RepertorioPage() {
                         }
                       }}
                       disabled={index === 0}
-                      className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-2 sm:px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       ↑ Subir
                     </button>
@@ -852,7 +864,7 @@ export default function RepertorioPage() {
                         }
                       }}
                       disabled={index === viewingRepertorio!.cifras.length - 1}
-                      className="px-3 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-2 sm:px-3 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       ↓ Descer
                     </button>
@@ -863,7 +875,7 @@ export default function RepertorioPage() {
                           handleRemoveCifraFromRepertorio(viewingRepertorio.id, cifra.id)
                         }
                       }}
-                      className="px-3 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200"
+                      className="px-2 sm:px-3 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200"
                     >
                       ✕ Remover
                     </button>
