@@ -752,7 +752,7 @@ export default function RepertorioPage() {
 
       {/* Modal de visualização de repertório */}
       <Dialog open={!!viewingRepertorio} onOpenChange={() => setViewingRepertorio(null)}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto mx-4">
+        <DialogContent className="max-w-[90%] sm:max-w-4xl max-h-[90vh] overflow-y-auto mx-auto my-auto">
           <DialogHeader>
             <DialogTitle className="text-center">
               <div className="space-y-2">
