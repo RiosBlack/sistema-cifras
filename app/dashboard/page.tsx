@@ -351,13 +351,13 @@ export default function Dashboard() {
   const renderCifraCard = (cifra: Cifra) => (
     <Card key={cifra.id} className="hover:shadow-md transition-shadow">
       <CardHeader className="pb-3">
-        <div className="flex justify-between items-start">
-          <div>
-            <CardTitle className="text-lg">{cifra.title}</CardTitle>
-            <p className="text-muted-foreground">{cifra.artist}</p>
+        <div className="flex justify-between items-start gap-2">
+          <div className="flex-1 min-w-0">
+            <CardTitle className="text-base sm:text-lg truncate">{cifra.title}</CardTitle>
+            <p className="text-sm text-muted-foreground truncate">{cifra.artist}</p>
           </div>
-          <div className="flex gap-1">
-            <Button variant="ghost" size="sm" onClick={() => setViewingCifra(cifra)}>
+          <div className="flex gap-1 flex-shrink-0">
+            <Button variant="ghost" size="sm" onClick={() => setViewingCifra(cifra)} className="h-8 w-8 p-0">
               <Eye className="w-4 h-4" />
             </Button>
             <Button
@@ -367,6 +367,7 @@ export default function Dashboard() {
                 setEditingCifra(cifra)
                 setShowEditor(true)
               }}
+              className="h-8 w-8 p-0"
             >
               <Edit className="w-4 h-4" />
             </Button>
@@ -374,7 +375,7 @@ export default function Dashboard() {
               variant="ghost"
               size="sm"
               onClick={() => handlePrintCifra(cifra)}
-              className="text-blue-600 hover:text-blue-700"
+              className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700"
             >
               <Printer className="w-4 h-4" />
             </Button>
@@ -382,7 +383,7 @@ export default function Dashboard() {
               variant="ghost"
               size="sm"
               onClick={() => handleDeleteCifra(cifra)}
-              className="text-destructive hover:text-destructive"
+              className="h-8 w-8 p-0 text-destructive hover:text-destructive"
             >
               <Trash2 className="w-4 h-4" />
             </Button>
@@ -391,13 +392,13 @@ export default function Dashboard() {
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
-          <div className="flex gap-2 text-sm">
-            <Badge variant="outline">Tom: {cifra.currentKey}</Badge>
-            {cifra.capoPosition > 0 && <Badge variant="outline">Capo: {cifra.capoPosition}ª</Badge>}
+          <div className="flex flex-wrap gap-1 text-xs">
+            <Badge variant="outline" className="text-xs">Tom: {cifra.currentKey}</Badge>
+            {cifra.capoPosition > 0 && <Badge variant="outline" className="text-xs">Capo: {cifra.capoPosition}ª</Badge>}
           </div>
 
-          <div className="text-sm text-muted-foreground line-clamp-2">
-            {cifra.lyrics.replace(/\[[^\]]+\]/g, "").substring(0, 100)}...
+          <div className="text-xs sm:text-sm text-muted-foreground line-clamp-2">
+            {cifra.lyrics.replace(/\[[^\]]+\]/g, "").substring(0, 80)}...
           </div>
 
           <div className="flex flex-wrap gap-1">
@@ -455,14 +456,14 @@ export default function Dashboard() {
 
     return (
       <Dialog open={!!viewingCifra} onOpenChange={() => setViewingCifra(null)}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-[90%] max-h-[90vh] overflow-y-auto mx-4">
           <DialogHeader>
             <DialogTitle className="text-center">
-              <div className="space-y-1">
-                <h2 className="text-2xl font-bold">{viewingCifra.title}</h2>
-                <p className="text-muted-foreground pb-2">{viewingCifra.artist}</p>
-                <div className="flex justify-center gap-2">
-                  <div className="flex items-center gap-2">
+              <div className="space-y-2">
+                <h2 className="text-xl sm:text-2xl font-bold">{viewingCifra.title}</h2>
+                <p className="text-sm sm:text-base text-muted-foreground pb-2">{viewingCifra.artist}</p>
+                <div className="flex flex-col sm:flex-row sm:justify-center gap-2">
+                  <div className="flex items-center justify-center gap-2">
                     <span className="text-sm font-medium">Tom:</span>
                     <Select value={currentKey} onValueChange={handleKeyChange}>
                       <SelectTrigger className="w-20 h-8">
@@ -483,7 +484,7 @@ export default function Dashboard() {
                     )}
                   </div>
                   {viewingCifra.capoPosition > 0 && (
-                    <Badge variant="outline">Capo: {viewingCifra.capoPosition}ª casa</Badge>
+                    <Badge variant="outline" className="text-xs">Capo: {viewingCifra.capoPosition}ª casa</Badge>
                   )}
                 </div>
               </div>
@@ -491,7 +492,7 @@ export default function Dashboard() {
           </DialogHeader>
 
           {/* Controle de transposição */}
-          <div className="flex items-center justify-center gap-4 p-4 bg-muted/50 rounded-lg">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 p-3 sm:p-4 bg-muted/50 rounded-lg">
             <span className="text-sm font-medium">Transposição:</span>
             <div className="flex items-center gap-2">
               <Button
@@ -499,6 +500,7 @@ export default function Dashboard() {
                 size="sm"
                 onClick={() => setTranspositionOffset(prev => Math.max(prev - 1, -12))}
                 disabled={transpositionOffset <= -12}
+                className="h-8 w-8 p-0"
               >
                 <Minus className="w-4 h-4" />
               </Button>
@@ -510,6 +512,7 @@ export default function Dashboard() {
                 size="sm"
                 onClick={() => setTranspositionOffset(prev => Math.min(prev + 1, 12))}
                 disabled={transpositionOffset >= 12}
+                className="h-8 w-8 p-0"
               >
                 <Plus className="w-4 h-4" />
               </Button>
@@ -518,18 +521,25 @@ export default function Dashboard() {
               variant="ghost"
               size="sm"
               onClick={() => setTranspositionOffset(0)}
-              className="text-xs"
+              className="text-xs h-8"
             >
               Reset
             </Button>
           </div>
 
-          <div className="whitespace-pre-wrap font-mono text-sm leading-relaxed border rounded-lg p-4">
-            {transposedLyrics.split(/(\[[^\]]+\])/).map((part, index) => {
+          <div className="whitespace-pre-wrap font-mono text-xl leading-relaxed border rounded-lg p-4 text-orange-500 font-bold">
+            {transposedLyrics.split(/(\[[^\]]+\]|^[^:]+:)/gm).map((part, index) => {
               if (part.match(/^\[[^\]]+\]$/)) {
                 return (
                   <span key={index} className="text-primary font-bold bg-primary/10 px-1 rounded">
                     {part.slice(1, -1)}
+                  </span>
+                )
+              }
+              if (part.match(/^[^:]+:$/)) {
+                return (
+                  <span key={index} className="text-black font-normal">
+                    {part}
                   </span>
                 )
               }
@@ -550,24 +560,24 @@ export default function Dashboard() {
 
   return (
     <AuthRouteGuard requireAuth={true}>
-      <div className="container mx-auto py-6 space-y-6">
+      <div className="container mx-auto px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Minhas Cifras</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl sm:text-3xl font-bold">Minhas Cifras</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">
             {filteredCifras.length} de {cifras.length} cifras
           </p>
         </div>
-        <Button onClick={() => setShowEditor(true)}>
+        <Button onClick={() => setShowEditor(true)} className="w-full sm:w-auto">
           <Plus className="w-4 h-4 mr-2" />
           Nova Cifra
         </Button>
       </div>
 
       {/* Filtros */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
+      <div className="space-y-4">
+        <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder="Buscar por título ou artista..."
@@ -577,14 +587,17 @@ export default function Dashboard() {
           />
         </div>
 
-        <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4 text-muted-foreground" />
-          <div className="flex flex-wrap gap-1">
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Filter className="w-4 h-4 text-muted-foreground" />
+            <span className="text-sm font-medium">Filtrar por tags:</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
             {tags.map((tag) => (
               <Badge
                 key={tag.id}
                 variant={selectedTags.includes(tag.name) ? "default" : "outline"}
-                className="cursor-pointer"
+                className="cursor-pointer text-xs"
                 onClick={() => toggleTag(tag.name)}
               >
                 {tag.name}
@@ -614,7 +627,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {filteredCifras.map(renderCifraCard)}
         </div>
       )}
@@ -622,7 +635,7 @@ export default function Dashboard() {
       {/* Editor Modal */}
       {showEditor && (
         <Dialog open={showEditor} onOpenChange={setShowEditor}>
-          <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto p-0">
+          <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto p-0 mx-4">
             <DialogTitle className="sr-only">
               {editingCifra ? "Editar Cifra" : "Nova Cifra"}
             </DialogTitle>
