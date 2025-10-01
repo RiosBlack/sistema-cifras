@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { RotateCcw, Music2, Guitar } from "lucide-react"
-import { NOTES, getSemitonesDifference, suggestCapoPosition } from "@/lib/music-utils"
+import { NOTES, ALL_NOTES, getSemitonesDifference, suggestCapoPosition } from "@/lib/music-utils"
 
 interface TransposeControlsProps {
   originalKey: string
@@ -30,6 +30,14 @@ export function TransposeControls({
   const suggestedCapo = suggestCapoPosition(originalKey)
 
   const capoOptions = Array.from({ length: 13 }, (_, i) => i)
+  
+  // Determina se o tom original é menor
+  const isMinorKey = originalKey.endsWith('m')
+  
+  // Filtra as notas baseado no tipo de tom
+  const availableNotes = isMinorKey 
+    ? ALL_NOTES.filter(note => note.endsWith('m')) // Apenas tons menores
+    : ALL_NOTES.filter(note => !note.endsWith('m')) // Apenas tons maiores
 
   return (
     <div className="bg-card border rounded-lg p-4 space-y-4">
@@ -54,7 +62,7 @@ export function TransposeControls({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {NOTES.map((note) => (
+                {availableNotes.map((note) => (
                   <SelectItem key={note} value={note}>
                     {note}
                   </SelectItem>

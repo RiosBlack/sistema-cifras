@@ -8,10 +8,11 @@ import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { CifraEditor } from "@/components/cifras/cifra-editor"
+import { CifraImport } from "@/components/cifras/cifra-import"
 import { AuthRouteGuard } from "@/components/auth-route-guard"
 import { useAuthContext } from "@/lib/auth-context"
 import { transposeLyrics, getSemitonesDifference, NOTES } from "@/lib/music-utils"
-import { Plus, Search, Music, Filter, Edit, Trash2, Eye, Minus, Printer } from "lucide-react"
+import { Plus, Search, Music, Filter, Edit, Trash2, Eye, Minus, Printer, Upload } from "lucide-react"
 
 interface Cifra {
   id: string
@@ -51,6 +52,8 @@ export default function Dashboard() {
   const [viewingCifra, setViewingCifra] = useState<Cifra | null>(null)
   const [deletingCifra, setDeletingCifra] = useState<Cifra | null>(null)
   const [transpositionOffset, setTranspositionOffset] = useState(0)
+  const [showImport, setShowImport] = useState(false)
+  const [importedData, setImportedData] = useState<any>(null)
 
   // Carregar dados da API
   useEffect(() => {
@@ -348,6 +351,13 @@ export default function Dashboard() {
     setSelectedTags((prev) => (prev.includes(tagName) ? prev.filter((t) => t !== tagName) : [...prev, tagName]))
   }
 
+  const handleImport = (data: { title: string; artist: string; lyrics: string; originalKey: string }) => {
+    setImportedData(data)
+    setShowImport(false)
+    setEditingCifra(null)
+    setShowEditor(true)
+  }
+
   const renderCifraCard = (cifra: Cifra) => (
     <Card key={cifra.id} className="hover:shadow-md transition-shadow">
       <CardHeader className="pb-3">
@@ -569,10 +579,16 @@ export default function Dashboard() {
             {filteredCifras.length} de {cifras.length} cifras
           </p>
         </div>
-        <Button onClick={() => setShowEditor(true)} className="w-full sm:w-auto">
-          <Plus className="w-4 h-4 mr-2" />
-          Nova Cifra
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          <Button onClick={() => setShowImport(true)} variant="outline" className="w-full sm:w-auto">
+            <Upload className="w-4 h-4 mr-2" />
+            Importar Cifra
+          </Button>
+          <Button onClick={() => { setImportedData(null); setEditingCifra(null); setShowEditor(true); }} className="w-full sm:w-auto">
+            <Plus className="w-4 h-4 mr-2" />
+            Nova Cifra
+          </Button>
+        </div>
       </div>
 
       {/* Filtros */}
@@ -632,20 +648,31 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* Modal de Importação */}
+      {showImport && (
+        <Dialog open={showImport} onOpenChange={setShowImport}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogTitle className="sr-only">Importar Cifra</DialogTitle>
+            <CifraImport onImport={handleImport} />
+          </DialogContent>
+        </Dialog>
+      )}
+
       {/* Editor Modal */}
       {showEditor && (
         <Dialog open={showEditor} onOpenChange={setShowEditor}>
           <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto p-0 mx-4">
             <DialogTitle className="sr-only">
-              {editingCifra ? "Editar Cifra" : "Nova Cifra"}
+              {editingCifra ? "Editar Cifra" : importedData ? "Cifra Importada" : "Nova Cifra"}
             </DialogTitle>
             <CifraEditor
-              initialData={editingCifra || undefined}
+              initialData={editingCifra || importedData || undefined}
               availableTags={tags}
               onSave={handleSaveCifra}
               onCancel={() => {
                 setShowEditor(false)
                 setEditingCifra(null)
+                setImportedData(null)
               }}
             />
           </DialogContent>

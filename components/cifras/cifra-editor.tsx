@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ChordSelector } from "./chord-selector"
 import { TransposeControls } from "./transpose-controls"
 import { Save, Music, Tag, X } from "lucide-react"
-import { NOTES, transposeLyrics, extractChords, getSemitonesDifference } from "@/lib/music-utils"
+import { NOTES, ALL_NOTES, transposeLyrics, extractChords, getSemitonesDifference } from "@/lib/music-utils"
 import { SectionChordBuilder } from "./section-chord-builder"
 
 declare global {
@@ -339,15 +339,15 @@ export function CifraEditor({ initialData, availableTags, onSave, onCancel }: Ci
     return (
       <div className="space-y-4">
         <div className="text-center border-b pb-4">
-          <h2 className="text-2xl font-bold">{formData.title || "Título da Música"}</h2>
-          <p className="text-muted-foreground">{formData.artist || "Artista"}</p>
-          <div className="flex justify-center gap-2 mt-2">
-            <Badge variant="outline">Tom: {formData.currentKey}</Badge>
-            {formData.capoPosition > 0 && <Badge variant="outline">Capo: {formData.capoPosition}ª casa</Badge>}
+          <h2 className="text-xl sm:text-2xl font-bold">{formData.title || "Título da Música"}</h2>
+          <p className="text-sm sm:text-base text-muted-foreground">{formData.artist || "Artista"}</p>
+          <div className="flex flex-wrap justify-center gap-2 mt-2">
+            <Badge variant="outline" className="text-xs">Tom: {formData.currentKey}</Badge>
+            {formData.capoPosition > 0 && <Badge variant="outline" className="text-xs">Capo: {formData.capoPosition}ª casa</Badge>}
           </div>
         </div>
 
-        <div className="whitespace-pre-wrap font-mono text-sm leading-relaxed">
+        <div className="whitespace-pre-wrap font-mono text-xs sm:text-sm leading-relaxed">
           {formData.lyrics.split(/(\[[^\]]+\])/).map((part, index) => {
             if (part.match(/^\[[^\]]+\]$/)) {
               return (
@@ -364,24 +364,24 @@ export function CifraEditor({ initialData, availableTags, onSave, onCancel }: Ci
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6 p-4 sm:p-0">
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
             <Music className="w-5 h-5" />
             {initialData?.id ? "Editar Cifra" : "Nova Cifra"}
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4 sm:space-y-6">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="edit">Editar</TabsTrigger>
-              <TabsTrigger value="preview">Visualizar</TabsTrigger>
+              <TabsTrigger value="edit" className="text-sm">Editar</TabsTrigger>
+              <TabsTrigger value="preview" className="text-sm">Visualizar</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="edit" className="space-y-6">
+            <TabsContent value="edit" className="space-y-4 sm:space-y-6">
               {/* Informações básicas */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="title">Título *</Label>
                   <Input
@@ -413,7 +413,7 @@ export function CifraEditor({ initialData, availableTags, onSave, onCancel }: Ci
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {NOTES.map((note) => (
+                      {ALL_NOTES.map((note) => (
                         <SelectItem key={note} value={note}>
                           {note}
                         </SelectItem>
@@ -502,11 +502,11 @@ export function CifraEditor({ initialData, availableTags, onSave, onCancel }: Ci
           </Tabs>
 
           {/* Botões de ação */}
-          <div className="flex justify-end gap-2 pt-6 border-t">
-            <Button variant="outline" onClick={onCancel}>
+          <div className="flex flex-col sm:flex-row justify-end gap-2 pt-4 sm:pt-6 border-t">
+            <Button variant="outline" onClick={onCancel} className="w-full sm:w-auto">
               Cancelar
             </Button>
-            <Button onClick={handleSave} disabled={!formData.title || !formData.artist}>
+            <Button onClick={handleSave} disabled={!formData.title || !formData.artist} className="w-full sm:w-auto">
               <Save className="w-4 h-4 mr-2" />
               Salvar Cifra
             </Button>

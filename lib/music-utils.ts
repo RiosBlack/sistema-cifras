@@ -2,6 +2,14 @@
 export const NOTES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 export const NOTES_FLAT = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"]
 
+// Todas as notas disponíveis para seleção (sustenidos e bemóis) - Maiores e Menores
+export const ALL_NOTES = [
+  // Tons maiores
+  "C", "C#", "Db", "D", "D#", "Eb", "E", "F", "F#", "Gb", "G", "G#", "Ab", "A", "A#", "Bb", "B",
+  // Tons menores
+  "Cm", "C#m", "Dbm", "Dm", "D#m", "Ebm", "Em", "Fm", "F#m", "Gbm", "Gm", "G#m", "Abm", "Am", "A#m", "Bbm", "Bm"
+]
+
 // Acordes comuns e suas variações
 export const CHORD_TYPES = [
   "",
@@ -22,9 +30,9 @@ export const CHORD_TYPES = [
   "13",
 ]
 
-// Extrai a nota base de um acorde
+// Extrai a nota base de um acorde (incluindo 'm' para tons menores)
 export function extractBaseNote(chord: string): string {
-  const match = chord.match(/^([A-G][#b]?)/)
+  const match = chord.match(/^([A-G][#b]?m?)/)
   return match ? match[1] : chord
 }
 
@@ -36,6 +44,11 @@ export function normalizeNote(note: string): string {
     Gb: "F#",
     Ab: "G#",
     Bb: "A#",
+    Dbm: "C#m",
+    Ebm: "D#m",
+    Gbm: "F#m",
+    Abm: "G#m",
+    Bbm: "A#m",
   }
   return flatToSharp[note] || note
 }
@@ -45,21 +58,34 @@ export function transposeChord(chord: string, semitones: number): string {
   if (!chord || semitones === 0) return chord
 
   const baseNote = extractBaseNote(chord)
-  const normalizedNote = normalizeNote(baseNote)
+  const isMinor = baseNote.endsWith('m')
+  
+  // Remove 'm' temporariamente para transposição
+  const noteWithoutMinor = baseNote.replace(/m$/, '')
+  const normalizedNote = normalizeNote(noteWithoutMinor)
   const currentIndex = NOTES.indexOf(normalizedNote)
 
   if (currentIndex === -1) return chord
 
   const newIndex = (currentIndex + semitones + 12) % 12
-  const newNote = NOTES[newIndex]
+  let newNote = NOTES[newIndex]
+  
+  // Adiciona 'm' de volta se era um acorde menor
+  if (isMinor) {
+    newNote = newNote + 'm'
+  }
 
   return chord.replace(baseNote, newNote)
 }
 
 // Calcula a diferença em semitons entre duas notas
 export function getSemitonesDifference(fromKey: string, toKey: string): number {
-  const fromIndex = NOTES.indexOf(normalizeNote(fromKey))
-  const toIndex = NOTES.indexOf(normalizeNote(toKey))
+  // Remove 'm' para calcular apenas a diferença entre as notas base
+  const fromNoteBase = normalizeNote(fromKey.replace('m', ''))
+  const toNoteBase = normalizeNote(toKey.replace('m', ''))
+  
+  const fromIndex = NOTES.indexOf(fromNoteBase)
+  const toIndex = NOTES.indexOf(toNoteBase)
 
   if (fromIndex === -1 || toIndex === -1) return 0
 
@@ -74,7 +100,9 @@ export function applyCapo(chord: string, capoPosition: number): string {
 // Sugere posição de capotraste para tons mais fáceis
 export function suggestCapoPosition(originalKey: string): number {
   const easyKeys = ["C", "G", "D", "A", "E"]
-  const originalIndex = NOTES.indexOf(normalizeNote(originalKey))
+  // Remove 'm' para obter apenas a nota base
+  const originalKeyBase = normalizeNote(originalKey.replace('m', ''))
+  const originalIndex = NOTES.indexOf(originalKeyBase)
 
   if (originalIndex === -1) return 0
 

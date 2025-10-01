@@ -6,11 +6,15 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Trash2, Music, X } from "lucide-react"
+import { Plus, Trash2, Music, X, Edit, Check, ChevronUp, ChevronDown } from "lucide-react"
 
-// Acordes principais
-const MAIN_CHORDS = [
-  "C", "D", "E", "F", "G", "A", "B",
+// Acordes principais - Tons maiores
+const MAJOR_CHORDS = [
+  "C", "D", "E", "F", "G", "A", "B"
+]
+
+// Acordes principais - Tons menores
+const MINOR_CHORDS = [
   "Cm", "Dm", "Em", "Fm", "Gm", "Am", "Bm"
 ]
 
@@ -45,7 +49,12 @@ export function SectionChordBuilder({ onChordSelect, initialSections = [], onSec
   const [sections, setSections] = useState<ChordSection[]>([])
   const [selectedChord, setSelectedChord] = useState("")
   const [selectedSeparator, setSelectedSeparator] = useState<" / " | " → " | null>(null)
+  const [editingSection, setEditingSection] = useState<string | null>(null)
+  const [editName, setEditName] = useState("")
+  const [editChords, setEditChords] = useState("")
+  const [editRepetition, setEditRepetition] = useState(1)
   const chordInputRef = useRef<HTMLInputElement>(null)
+  const editChordInputRef = useRef<HTMLInputElement>(null)
 
   // Carregar seções iniciais quando o componente for montado
   useEffect(() => {
@@ -127,6 +136,83 @@ export function SectionChordBuilder({ onChordSelect, initialSections = [], onSec
     setSections(updatedSections)
   }
 
+  const startEditSection = (section: ChordSection) => {
+    setEditingSection(section.id)
+    setEditName(section.name)
+    setEditChords(section.chords)
+    setEditRepetition(section.repetition || 1)
+  }
+
+  const cancelEditSection = () => {
+    setEditingSection(null)
+    setEditName("")
+    setEditChords("")
+    setEditRepetition(1)
+  }
+
+  const saveEditSection = () => {
+    if (!editingSection || !editName.trim() || !editChords.trim()) return
+
+    const updatedSections = sections.map(section => {
+      if (section.id === editingSection) {
+        return {
+          ...section,
+          name: editName.trim(),
+          chords: editChords.trim(),
+          repetition: editRepetition > 1 ? editRepetition : undefined
+        }
+      }
+      return section
+    })
+
+    setSections(updatedSections)
+    cancelEditSection()
+  }
+
+  const insertSeparatorInEdit = (separator: string) => {
+    const input = editChordInputRef.current
+    if (!input) return
+
+    const start = input.selectionStart || 0
+    const end = input.selectionEnd || 0
+    const currentValue = editChords
+
+    // Insere o separador na posição do cursor
+    const newValue = currentValue.substring(0, start) + separator + currentValue.substring(end)
+    setEditChords(newValue)
+
+    // Reposiciona o cursor após o separador inserido
+    setTimeout(() => {
+      input.focus()
+      const newPosition = start + separator.length
+      input.setSelectionRange(newPosition, newPosition)
+    }, 0)
+  }
+
+  const moveSectionUp = (index: number) => {
+    if (index === 0) return // Já está no topo
+    
+    const updatedSections = [...sections]
+    // Troca a seção com a anterior
+    const temp = updatedSections[index]
+    updatedSections[index] = updatedSections[index - 1]
+    updatedSections[index - 1] = temp
+    
+    setSections(updatedSections)
+  }
+
+  const moveSectionDown = (index: number) => {
+    if (index === sections.length - 1) return // Já está no final
+    
+    const updatedSections = [...sections]
+    // Troca a seção com a próxima
+    const temp = updatedSections[index]
+    updatedSections[index] = updatedSections[index + 1]
+    updatedSections[index + 1] = temp
+    
+    setSections(updatedSections)
+  }
+
   const formatSectionForDisplay = (section: ChordSection): string => {
     let result = `${section.name}: ${section.chords}`
     if (section.repetition && section.repetition > 1) {
@@ -179,11 +265,24 @@ export function SectionChordBuilder({ onChordSelect, initialSections = [], onSec
 
         {/* Seletor de acordes */}
         <div className="space-y-3">
-         
-
-          <Label className="text-sm font-medium">Acordes Principais</Label>
+          <Label className="text-sm font-medium">Tons Maiores</Label>
           <div className="flex flex-wrap gap-2">
-            {MAIN_CHORDS.map((chord) => (
+            {MAJOR_CHORDS.map((chord) => (
+              <Button
+                key={chord}
+                variant="outline"
+                size="sm"
+                onClick={() => addToSelectedChord(chord)}
+                className="h-8 text-xs font-mono"
+              >
+                {chord}
+              </Button>
+            ))}
+          </div>
+
+          <Label className="text-sm font-medium">Tons Menores</Label>
+          <div className="flex flex-wrap gap-2">
+            {MINOR_CHORDS.map((chord) => (
               <Button
                 key={chord}
                 variant="outline"
@@ -284,7 +383,7 @@ export function SectionChordBuilder({ onChordSelect, initialSections = [], onSec
         </div>
 
         {/* Formulário para nova seção */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted/30 rounded-lg">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-3 sm:p-4 bg-muted/30 rounded-lg">
           <div className="space-y-2">
             <Label htmlFor="section-name" className="text-sm">
               Nome da Seção
@@ -351,7 +450,7 @@ export function SectionChordBuilder({ onChordSelect, initialSections = [], onSec
           <Button 
             onClick={addSection} 
             disabled={!sectionName.trim() || !chordSequence.trim()}
-            className="w-full md:w-auto"
+            className="w-full sm:w-auto"
           >
             <Plus className="w-4 h-4 mr-2" />
             Adicionar Seção
@@ -363,24 +462,151 @@ export function SectionChordBuilder({ onChordSelect, initialSections = [], onSec
           <div className="space-y-2">
             <Label className="text-sm font-medium">Seções Adicionadas</Label>
             <div className="space-y-2">
-              {sections.map((section) => (
+              {sections.map((section, index) => (
                 <div
                   key={section.id}
-                  className="flex items-center justify-between p-3 bg-background border rounded-lg"
+                  className="bg-background border rounded-lg"
                 >
-                  <div className="flex-1">
-                    <div className="font-mono text-sm">
-                      {formatSectionForDisplay(section)}
+                  {editingSection === section.id ? (
+                    // Modo de edição
+                    <div className="p-3 space-y-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div className="space-y-1">
+                          <Label className="text-xs">Nome da Seção</Label>
+                          <Input
+                            value={editName}
+                            onChange={(e) => setEditName(e.target.value)}
+                            placeholder="Nome da seção"
+                            className="text-sm"
+                          />
+                        </div>
+                        <div className="space-y-1 sm:col-span-2">
+                          <Label className="text-xs">Acordes</Label>
+                          <Input
+                            ref={editChordInputRef}
+                            value={editChords}
+                            onChange={(e) => setEditChords(e.target.value)}
+                            placeholder="Ex: C / G / Am / F"
+                            className="text-sm font-mono"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Repetições</Label>
+                          <Input
+                            type="number"
+                            min="1"
+                            value={editRepetition}
+                            onChange={(e) => setEditRepetition(parseInt(e.target.value) || 1)}
+                            className="text-sm"
+                          />
+                        </div>
+                      </div>
+                      
+                      {/* Separadores para edição */}
+                      <div className="space-y-2 border-t pt-3">
+                        <Label className="text-xs font-medium">Adicionar Separador</Label>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => insertSeparatorInEdit(" / ")}
+                            className="h-7 text-xs font-mono"
+                          >
+                            / (Barra)
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => insertSeparatorInEdit(" → ")}
+                            className="h-7 text-xs font-mono"
+                          >
+                            → (Seta)
+                          </Button>
+                          <span className="text-xs text-muted-foreground">
+                            Clique para inserir na posição do cursor
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={cancelEditSection}
+                          className="h-8 text-xs"
+                        >
+                          Cancelar
+                        </Button>
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={saveEditSection}
+                          className="h-8 text-xs"
+                        >
+                          <Check className="w-3 h-3 mr-1" />
+                          Salvar
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeSection(section.id)}
-                    className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
+                  ) : (
+                    // Modo de visualização
+                    <div className="flex items-center gap-2 p-2 sm:p-3">
+                      {/* Botões de reordenação */}
+                      <div className="flex flex-col gap-0.5 flex-shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => moveSectionUp(index)}
+                          disabled={index === 0}
+                          className="h-4 w-6 sm:h-5 sm:w-7 p-0 hover:bg-primary/10"
+                          title="Mover para cima"
+                        >
+                          <ChevronUp className="w-3 h-3 sm:w-4 sm:h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => moveSectionDown(index)}
+                          disabled={index === sections.length - 1}
+                          className="h-4 w-6 sm:h-5 sm:w-7 p-0 hover:bg-primary/10"
+                          title="Mover para baixo"
+                        >
+                          <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4" />
+                        </Button>
+                      </div>
+
+                      {/* Conteúdo da seção */}
+                      <div className="flex-1 min-w-0">
+                        <div className="font-mono text-xs sm:text-sm truncate">
+                          {formatSectionForDisplay(section)}
+                        </div>
+                      </div>
+
+                      {/* Botões de ação */}
+                      <div className="flex gap-1 flex-shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => startEditSection(section)}
+                          className="h-6 w-6 sm:h-8 sm:w-8 p-0 text-blue-600 hover:text-blue-700"
+                          title="Editar seção"
+                        >
+                          <Edit className="w-3 h-3 sm:w-4 sm:h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeSection(section.id)}
+                          className="h-6 w-6 sm:h-8 sm:w-8 p-0 text-destructive hover:text-destructive"
+                          title="Remover seção"
+                        >
+                          <X className="w-3 h-3 sm:w-4 sm:h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
