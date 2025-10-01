@@ -85,36 +85,37 @@ export function CifraEditor({ initialData, availableTags, onSave, onCancel }: Ci
     lines.forEach((line, index) => {
       const trimmedLine = line.trim()
       
-      // Procurar por padrões de seção com dois pontos
-      const colonMatch = trimmedLine.match(/^([A-Za-zÀ-ÿ\s]+):\s*(.+)$/)
+      // Ignorar linhas vazias
+      if (!trimmedLine) return
+      
+      // Procurar por padrões de seção com dois pontos: "Nome: acordes"
+      // Aceita qualquer caractere no nome da seção (incluindo números, acentos, etc.)
+      const colonMatch = trimmedLine.match(/^([^:]+):\s*(.+)$/)
       if (colonMatch) {
         const sectionName = colonMatch[1].trim()
-        const chords = colonMatch[2].trim()
+        let chords = colonMatch[2].trim()
         
-        // Verificar se contém acordes (pelo menos um padrão de acorde)
+        // Extrair repetição se houver (ex: "2x" ou "3x" no final)
+        let repetition: number | undefined = undefined
+        const repetitionMatch = chords.match(/\s+(\d+)x\s*$/)
+        if (repetitionMatch) {
+          repetition = parseInt(repetitionMatch[1])
+          chords = chords.replace(/\s+\d+x\s*$/, '').trim()
+        }
+        
+        // Verificar se a linha tem acordes (contém pelo menos uma letra maiúscula seguida de # ou b opcional)
         if (chords.match(/[A-G][#b]?/)) {
           sections.push({
             id: `section-${Date.now()}-${Math.random()}-${index}`,
             name: sectionName,
-            chords: chords
-          })
-        }
-      } else {
-        // Procurar por padrões sem dois pontos (nome seguido de acordes)
-        const spaceMatch = trimmedLine.match(/^([A-Za-zÀ-ÿ\s]+)\s+([A-G][#b]?.+)$/)
-        if (spaceMatch) {
-          const sectionName = spaceMatch[1].trim()
-          const chords = spaceMatch[2].trim()
-          
-          sections.push({
-            id: `section-${Date.now()}-${Math.random()}-${index}`,
-            name: sectionName,
-            chords: chords
+            chords: chords,
+            repetition: repetition
           })
         }
       }
     })
     
+    console.log('Seções extraídas:', sections.length, sections)
     return sections
   }
 

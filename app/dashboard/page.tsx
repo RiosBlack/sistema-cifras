@@ -11,7 +11,7 @@ import { CifraEditor } from "@/components/cifras/cifra-editor"
 import { CifraImport } from "@/components/cifras/cifra-import"
 import { AuthRouteGuard } from "@/components/auth-route-guard"
 import { useAuthContext } from "@/lib/auth-context"
-import { transposeLyrics, getSemitonesDifference, NOTES } from "@/lib/music-utils"
+import { transposeLyrics, getSemitonesDifference, NOTES, ALL_NOTES } from "@/lib/music-utils"
 import { Plus, Search, Music, Filter, Edit, Trash2, Eye, Minus, Printer, Upload } from "lucide-react"
 
 interface Cifra {
@@ -435,15 +435,30 @@ export default function Dashboard() {
       ? transposeLyrics(viewingCifra.lyrics, transpositionOffset)
       : viewingCifra.lyrics
 
+    // Determina se o tom original é menor
+    const isMinorKey = viewingCifra.originalKey.endsWith('m')
+    
+    // Filtra as notas baseado no tipo de tom
+    const availableNotes = isMinorKey 
+      ? ALL_NOTES.filter(note => note.endsWith('m')) // Apenas tons menores
+      : ALL_NOTES.filter(note => !note.endsWith('m')) // Apenas tons maiores
+
     // Calcular o tom atual baseado na transposição
     const getCurrentKey = () => {
       if (transpositionOffset === 0) return viewingCifra.currentKey
       
-      const originalIndex = NOTES.indexOf(viewingCifra.currentKey)
+      const originalIndex = NOTES.indexOf(viewingCifra.currentKey.replace('m', ''))
       if (originalIndex === -1) return viewingCifra.currentKey
       
       const newIndex = (originalIndex + transpositionOffset + 12) % 12
-      return NOTES[newIndex]
+      let newKey = NOTES[newIndex]
+      
+      // Adiciona 'm' de volta se era um tom menor
+      if (isMinorKey) {
+        newKey = newKey + 'm'
+      }
+      
+      return newKey
     }
 
     const currentKey = getCurrentKey()
@@ -454,8 +469,8 @@ export default function Dashboard() {
         // Se selecionou o tom original, resetar transposição
         setTranspositionOffset(0)
       } else {
-        const originalIndex = NOTES.indexOf(viewingCifra.currentKey)
-        const newIndex = NOTES.indexOf(newKey)
+        const originalIndex = NOTES.indexOf(viewingCifra.currentKey.replace('m', ''))
+        const newIndex = NOTES.indexOf(newKey.replace('m', ''))
         
         if (originalIndex !== -1 && newIndex !== -1) {
           const offset = (newIndex - originalIndex + 12) % 12
@@ -480,7 +495,7 @@ export default function Dashboard() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {NOTES.map((note) => (
+                        {availableNotes.map((note) => (
                           <SelectItem key={note} value={note}>
                             {note}
                           </SelectItem>

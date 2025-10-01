@@ -53,9 +53,21 @@ export function normalizeNote(note: string): string {
   return flatToSharp[note] || note
 }
 
+// Limpa acordes inválidos (remove ## ou bb duplos)
+function cleanChord(chord: string): string {
+  // Remove ## duplos ou mais - substitui por apenas um #
+  chord = chord.replace(/#{2,}/g, '#')
+  // Remove bb duplos ou mais - substitui por apenas um b
+  chord = chord.replace(/b{2,}/g, 'b')
+  return chord
+}
+
 // Transpõe um acorde por um número de semitons
 export function transposeChord(chord: string, semitones: number): string {
   if (!chord || semitones === 0) return chord
+
+  // Limpa o acorde antes de transpor
+  chord = cleanChord(chord)
 
   const baseNote = extractBaseNote(chord)
   const isMinor = baseNote.endsWith('m')
@@ -139,7 +151,7 @@ export function transposeLyrics(lyrics: string, semitones: number): string {
   if (semitones === 0) return lyrics
 
   // Regex para acordes dentro de colchetes [C], [Dm7], etc.
-  const bracketChordRegex = /\[([A-G][#b]?(?:m|maj|dim|aug|sus[24]|add\d+|\d+)*)\]/g
+  const bracketChordRegex = /\[([A-G][#b]?(?:m|maj7?|dim|aug|sus[24]|add\d+|\d+)*)\]/g
 
   // Processar linha por linha
   const lines = lyrics.split('\n')
@@ -152,12 +164,20 @@ export function transposeLyrics(lyrics: string, semitones: number): string {
       const sectionName = trimmedLine.substring(0, colonIndex).trim()
       const chordsPart = trimmedLine.substring(colonIndex + 1).trim()
       
-      // Transpor apenas os acordes na parte após os dois pontos
-      const transposedChords = chordsPart.replace(/\b([A-G][#b]?(?:m|maj|dim|aug|sus[24]|add\d+|\d+)*)\b/g, (chordMatch) => {
-        return transposeChord(chordMatch, semitones)
+      // Transpor acordes, processando cada parte separadamente para evitar capturar ## ou bb
+      // Divide por separadores mas mantém os separadores
+      const parts = chordsPart.split(/(\s*[\/→]\s*)/)
+      const transposedParts = parts.map(part => {
+        // Se é um separador, mantém como está
+        if (part.match(/^\s*[\/→]\s*$/)) return part
+        
+        // Se contém um acorde, transpõe
+        return part.replace(/\b([A-G][#b]?(?:m|maj7?|dim|aug|sus[24]|add\d+|\d+)*(?:\([^)]*\))?)\b/g, (chordMatch) => {
+          return transposeChord(chordMatch, semitones)
+        })
       })
       
-      return `${sectionName}: ${transposedChords}`
+      return `${sectionName}: ${transposedParts.join('')}`
     } else {
       // Para linhas que não são seções, transpor acordes dentro de colchetes
       return line.replace(bracketChordRegex, (match, chord) => {
