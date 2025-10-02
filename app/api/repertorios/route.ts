@@ -15,6 +15,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
+    const includeAdminRepertorios = searchParams.get('includeAdminRepertorios') === 'true'
 
     if (!userId) {
       return NextResponse.json(
@@ -23,9 +24,41 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // Buscar informações do usuário para verificar o role
+    let currentUser = null
+    currentUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, role: true }
+    })
+
+    let where: any = {}
+    
+    if (includeAdminRepertorios && currentUser?.role === 'USER') {
+      // Para usuários USER, incluir seus próprios repertórios + repertórios de usuários ADMIN
+      where.OR = [
+        { userId: userId }, // Repertórios próprios
+        { 
+          user: { 
+            role: 'ADMIN' 
+          } 
+        } // Repertórios de usuários ADMIN
+      ]
+    } else {
+      // Para usuários ADMIN ou quando não incluir repertórios de admin, mostrar apenas os próprios
+      where.userId = userId
+    }
+
     const repertorios = await prisma.repertorio.findMany({
-      where: { userId },
+      where,
       include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true
+          }
+        },
         cifras: {
           include: {
             cifra: {

@@ -17,6 +17,12 @@ interface Repertorio {
   name: string
   description?: string
   createdAt: string
+  user: {
+    id: string
+    name: string
+    email: string
+    role: 'USER' | 'ADMIN'
+  }
   cifras: Array<{
     id: string
     selectedKey: string
@@ -48,6 +54,7 @@ export default function RepertorioPage() {
   const [editingRepertorio, setEditingRepertorio] = useState<Repertorio | null>(null)
   const [viewingRepertorio, setViewingRepertorio] = useState<Repertorio | null>(null)
   const [deletingRepertorio, setDeletingRepertorio] = useState<Repertorio | null>(null)
+  const [loadingRepertorios, setLoadingRepertorios] = useState(true)
   const [newRepertorioName, setNewRepertorioName] = useState("")
   const [newRepertorioDescription, setNewRepertorioDescription] = useState("")
   const [editRepertorioName, setEditRepertorioName] = useState("")
@@ -68,14 +75,19 @@ export default function RepertorioPage() {
   const loadRepertorios = async () => {
     if (!user?.id) return
     
+    setLoadingRepertorios(true)
     try {
-      const response = await fetch(`/api/repertorios?userId=${user.id}`)
+      // Para usuários USER, incluir repertórios de admins
+      const includeAdminRepertorios = user.role === 'USER'
+      const response = await fetch(`/api/repertorios?userId=${user.id}&includeAdminRepertorios=${includeAdminRepertorios}`)
       const result = await response.json()
       if (result.success) {
         setRepertorios(result.data)
       }
     } catch (error) {
       console.error('Erro ao carregar repertórios:', error)
+    } finally {
+      setLoadingRepertorios(false)
     }
   }
 
@@ -452,63 +464,74 @@ export default function RepertorioPage() {
     repertorio.description?.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  const renderRepertorioCard = (repertorio: Repertorio) => (
-    <Card key={repertorio.id} className="w-full">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex-1 min-w-0 space-y-1">
-            <CardTitle className="text-base sm:text-lg truncate">{repertorio.name}</CardTitle>
-            {repertorio.description && (
-              <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">{repertorio.description}</p>
-            )}
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="secondary" className="text-xs">
-                {repertorio.cifras.length} cifra{repertorio.cifras.length !== 1 ? 's' : ''}
-              </Badge>
-              <span className="text-xs text-muted-foreground">
-                Criado em {new Date(repertorio.createdAt).toLocaleDateString('pt-BR')}
-              </span>
+  const renderRepertorioCard = (repertorio: Repertorio) => {
+    const isOwnRepertorio = repertorio.user.id === user?.id
+    const isAdminRepertorio = repertorio.user.role === 'ADMIN' && !isOwnRepertorio
+    
+    return (
+      <Card key={repertorio.id} className="w-full">
+        <CardHeader className="pb-3">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1 min-w-0 space-y-1">
+              <CardTitle className="text-base sm:text-lg truncate">{repertorio.name}</CardTitle>
+              {repertorio.description && (
+                <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">{repertorio.description}</p>
+              )}
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="secondary" className="text-xs">
+                  {repertorio.cifras.length} cifra{repertorio.cifras.length !== 1 ? 's' : ''}
+                </Badge>
+                <span className="text-xs text-muted-foreground">
+                  Criado em {new Date(repertorio.createdAt).toLocaleDateString('pt-BR')}
+                </span>
+              </div>
             </div>
-          </div>
-          <div className="flex gap-1 flex-shrink-0">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setViewingRepertorio(repertorio)}
-              className="h-8 w-8 p-0"
-            >
-              <Eye className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => openAddCifraModal(repertorio)}
-              title="Adicionar cifra"
-              className="h-8 w-8 p-0"
-            >
-              <Plus className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => openEditModal(repertorio)}
-              className="h-8 w-8 p-0"
-            >
-              <Edit className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setDeletingRepertorio(repertorio)}
-              className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-            >
+            <div className="flex gap-1 flex-shrink-0">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setViewingRepertorio(repertorio)}
+                className="h-8 w-8 p-0"
+              >
+                <Eye className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => openAddCifraModal(repertorio)}
+                title="Adicionar cifra"
+                className="h-8 w-8 p-0"
+                disabled={!isOwnRepertorio}
+                title={!isOwnRepertorio ? "Você só pode adicionar cifras aos seus próprios repertórios" : "Adicionar cifra"}
+              >
+                <Plus className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => openEditModal(repertorio)}
+                className="h-8 w-8 p-0"
+                disabled={!isOwnRepertorio}
+                title={!isOwnRepertorio ? "Você só pode editar seus próprios repertórios" : "Editar repertório"}
+              >
+                <Edit className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setDeletingRepertorio(repertorio)}
+                className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                disabled={!isOwnRepertorio}
+                title={!isOwnRepertorio ? "Você só pode excluir seus próprios repertórios" : "Excluir repertório"}
+              >
               <Trash2 className="w-4 h-4" />
             </Button>
           </div>
         </div>
       </CardHeader>
     </Card>
-  )
+    )
+  }
 
   return (
     <AuthRouteGuard requireAuth={true}>
@@ -520,7 +543,12 @@ export default function RepertorioPage() {
             Gerencie suas listas de cifras com tons específicos
           </p>
         </div>
-        <Button onClick={() => setShowCreateModal(true)} className="w-full sm:w-auto">
+        <Button 
+          onClick={() => setShowCreateModal(true)} 
+          className="w-full sm:w-auto"
+          disabled={user?.role === 'USER'}
+          title={user?.role === 'USER' ? "Apenas administradores podem criar repertórios" : "Novo Repertório"}
+        >
           <Plus className="w-4 h-4 mr-2" />
           Novo Repertório
         </Button>
@@ -540,23 +568,38 @@ export default function RepertorioPage() {
       </div>
 
       {/* Lista de repertórios */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {filteredRepertorios.map(renderRepertorioCard)}
-      </div>
-
-      {filteredRepertorios.length === 0 && (
+      {loadingRepertorios ? (
+        <div className="text-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <h3 className="text-lg font-semibold mb-2">Carregando repertórios...</h3>
+          <p className="text-muted-foreground">
+            Aguarde enquanto buscamos os repertórios disponíveis
+          </p>
+        </div>
+      ) : filteredRepertorios.length === 0 ? (
         <div className="text-center py-12">
           <Music className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-          <h3 className="text-lg font-semibold mb-2">Nenhum repertório encontrado</h3>
+          <h3 className="text-lg font-semibold mb-2">
+            {repertorios.length === 0 ? "Nenhum repertório disponível" : "Nenhum repertório encontrado"}
+          </h3>
           <p className="text-muted-foreground mb-4">
-            {searchTerm ? "Tente ajustar sua busca" : "Crie seu primeiro repertório"}
+            {repertorios.length === 0 
+              ? (user?.role === 'USER' 
+                  ? "Não há repertórios disponíveis no momento" 
+                  : "Crie seu primeiro repertório")
+              : "Tente ajustar sua busca"
+            }
           </p>
-          {!searchTerm && (
+          {!searchTerm && repertorios.length === 0 && user?.role === 'ADMIN' && (
             <Button onClick={() => setShowCreateModal(true)}>
               <Plus className="w-4 h-4 mr-2" />
-              Criar Repertório
+              Criar Primeiro Repertório
             </Button>
           )}
+        </div>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {filteredRepertorios.map(renderRepertorioCard)}
         </div>
       )}
 
@@ -849,8 +892,9 @@ export default function RepertorioPage() {
                           console.log('Não é possível subir - já está na primeira posição')
                         }
                       }}
-                      disabled={index === 0}
+                      disabled={index === 0 || (user?.role === 'USER' && viewingRepertorio?.user.id !== user?.id)}
                       className="px-2 sm:px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                      title={user?.role === 'USER' && viewingRepertorio?.user.id !== user?.id ? "Você só pode modificar seus próprios repertórios" : "Subir cifra"}
                     >
                       ↑ Subir
                     </button>
@@ -863,8 +907,9 @@ export default function RepertorioPage() {
                           console.log('Não é possível descer - já está na última posição')
                         }
                       }}
-                      disabled={index === viewingRepertorio!.cifras.length - 1}
+                      disabled={index === viewingRepertorio!.cifras.length - 1 || (user?.role === 'USER' && viewingRepertorio?.user.id !== user?.id)}
                       className="px-2 sm:px-3 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                      title={user?.role === 'USER' && viewingRepertorio?.user.id !== user?.id ? "Você só pode modificar seus próprios repertórios" : "Descer cifra"}
                     >
                       ↓ Descer
                     </button>
@@ -875,7 +920,9 @@ export default function RepertorioPage() {
                           handleRemoveCifraFromRepertorio(viewingRepertorio.id, cifra.id)
                         }
                       }}
-                      className="px-2 sm:px-3 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200"
+                      disabled={user?.role === 'USER' && viewingRepertorio?.user.id !== user?.id}
+                      className="px-2 sm:px-3 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                      title={user?.role === 'USER' && viewingRepertorio?.user.id !== user?.id ? "Você só pode modificar seus próprios repertórios" : "Remover cifra"}
                     >
                       ✕ Remover
                     </button>
