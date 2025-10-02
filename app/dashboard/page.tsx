@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
 import { CifraEditor } from "@/components/cifras/cifra-editor"
 import { CifraImport } from "@/components/cifras/cifra-import"
 import { AuthRouteGuard } from "@/components/auth-route-guard"
@@ -33,6 +35,12 @@ interface Cifra {
     }
   }>
   createdAt: string
+  user: {
+    id: string
+    name: string
+    email: string
+    role: 'USER' | 'ADMIN'
+  }
 }
 
 interface Tag {
@@ -54,6 +62,7 @@ export default function Dashboard() {
   const [transpositionOffset, setTranspositionOffset] = useState(0)
   const [showImport, setShowImport] = useState(false)
   const [importedData, setImportedData] = useState<any>(null)
+  const [showOnlyOwnCifras, setShowOnlyOwnCifras] = useState(false)
 
   // Carregar dados da API
   useEffect(() => {
@@ -62,6 +71,13 @@ export default function Dashboard() {
       loadTags()
     }
   }, [user?.id])
+
+  // Recarregar cifras quando o filtro mudar
+  useEffect(() => {
+    if (user?.id) {
+      loadCifras()
+    }
+  }, [showOnlyOwnCifras])
 
   // Resetar transposição quando abrir uma nova cifra
   useEffect(() => {
@@ -74,7 +90,9 @@ export default function Dashboard() {
     if (!user?.id) return
     
     try {
-      const response = await fetch(`/api/cifras?userId=${user.id}`)
+      // Para usuários USER, incluir cifras de admins (exceto se filtrar apenas próprias)
+      const includeAdminCifras = user.role === 'USER' && !showOnlyOwnCifras
+      const response = await fetch(`/api/cifras?userId=${user.id}&includeAdminCifras=${includeAdminCifras}`)
       const result = await response.json()
       
       if (result.success) {
@@ -358,48 +376,57 @@ export default function Dashboard() {
     setShowEditor(true)
   }
 
-  const renderCifraCard = (cifra: Cifra) => (
-    <Card key={cifra.id} className="hover:shadow-md transition-shadow">
-      <CardHeader className="pb-3">
-        <div className="flex justify-between items-start gap-2">
-          <div className="flex-1 min-w-0">
-            <CardTitle className="text-base sm:text-lg truncate">{cifra.title}</CardTitle>
-            <p className="text-sm text-muted-foreground truncate">{cifra.artist}</p>
+  const renderCifraCard = (cifra: Cifra) => {
+    const isOwnCifra = cifra.user.id === user?.id
+    const isAdminCifra = cifra.user.role === 'ADMIN' && !isOwnCifra
+    
+    return (<Card key={cifra.id} className={`hover:shadow-md transition-shadow ${isAdminCifra ? 'border-l-4 border-l-blue-500' : ''}`}>
+        <CardHeader className="pb-3">
+          <div className="flex justify-between items-start gap-2">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-base sm:text-lg truncate">{cifra.title}</CardTitle>
+              </div>
+              <p className="text-sm text-muted-foreground truncate">{cifra.artist}</p>
+            </div>
+            <div className="flex gap-1 flex-shrink-0">
+              <Button variant="ghost" size="sm" onClick={() => setViewingCifra(cifra)} className="h-8 w-8 p-0">
+                <Eye className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setEditingCifra(cifra)
+                  setShowEditor(true)
+                }}
+                className="h-8 w-8 p-0"
+                disabled={!isOwnCifra}
+                title={!isOwnCifra ? "Você só pode editar suas próprias cifras" : "Editar cifra"}
+              >
+                <Edit className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handlePrintCifra(cifra)}
+                className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700"
+              >
+                <Printer className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleDeleteCifra(cifra)}
+                className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                disabled={!isOwnCifra}
+                title={!isOwnCifra ? "Você só pode excluir suas próprias cifras" : "Excluir cifra"}
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
-          <div className="flex gap-1 flex-shrink-0">
-            <Button variant="ghost" size="sm" onClick={() => setViewingCifra(cifra)} className="h-8 w-8 p-0">
-              <Eye className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setEditingCifra(cifra)
-                setShowEditor(true)
-              }}
-              className="h-8 w-8 p-0"
-            >
-              <Edit className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handlePrintCifra(cifra)}
-              className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700"
-            >
-              <Printer className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleDeleteCifra(cifra)}
-              className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      </CardHeader>
+        </CardHeader>
       <CardContent>
         <div className="space-y-3">
           <div className="flex flex-wrap gap-1 text-xs">
@@ -424,8 +451,8 @@ export default function Dashboard() {
           </div>
         </div>
       </CardContent>
-    </Card>
-  )
+    </Card>)
+  }
 
   const renderCifraViewer = () => {
     if (!viewingCifra) return null
@@ -595,11 +622,22 @@ export default function Dashboard() {
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-          <Button onClick={() => setShowImport(true)} variant="outline" className="w-full sm:w-auto">
+          <Button 
+            onClick={() => setShowImport(true)} 
+            variant="outline" 
+            className="w-full sm:w-auto"
+            disabled={user?.role === 'USER' && !showOnlyOwnCifras}
+            title={user?.role === 'USER' && !showOnlyOwnCifras ? "Você só pode importar quando estiver vendo apenas suas cifras" : "Importar Cifra"}
+          >
             <Upload className="w-4 h-4 mr-2" />
             Importar Cifra
           </Button>
-          <Button onClick={() => { setImportedData(null); setEditingCifra(null); setShowEditor(true); }} className="w-full sm:w-auto">
+          <Button 
+            onClick={() => { setImportedData(null); setEditingCifra(null); setShowEditor(true); }} 
+            className="w-full sm:w-auto"
+            disabled={user?.role === 'USER'}
+            title={user?.role === 'USER' ? "Apenas administradores podem criar novas cifras" : "Nova Cifra"}
+          >
             <Plus className="w-4 h-4 mr-2" />
             Nova Cifra
           </Button>
@@ -636,6 +674,20 @@ export default function Dashboard() {
             ))}
           </div>
         </div>
+
+        {/* Filtro de cifras próprias/todas - apenas para usuários USER */}
+        {user?.role === 'USER' && (
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="show-only-own"
+              checked={showOnlyOwnCifras}
+              onCheckedChange={setShowOnlyOwnCifras}
+            />
+            <Label htmlFor="show-only-own" className="text-sm">
+              Mostrar apenas minhas cifras
+            </Label>
+          </div>
+        )}
       </div>
 
       {/* Lista de cifras */}

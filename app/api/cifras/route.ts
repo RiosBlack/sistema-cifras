@@ -26,26 +26,76 @@ export async function GET(request: NextRequest) {
     const userId = searchParams.get('userId')
     const search = searchParams.get('search')
     const tag = searchParams.get('tag')
+    const includeAdminCifras = searchParams.get('includeAdminCifras') === 'true'
+
+    // Buscar informações do usuário para verificar o role
+    let currentUser = null
+    if (userId) {
+      currentUser = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, role: true }
+      })
+    }
 
     let where: any = {}
     
     if (userId) {
-      where.userId = userId
+      if (includeAdminCifras && currentUser?.role === 'USER') {
+        // Para usuários USER, incluir suas próprias cifras + cifras de usuários ADMIN
+        where.OR = [
+          { userId: userId }, // Cifras próprias
+          { 
+            user: { 
+              role: 'ADMIN' 
+            } 
+          } // Cifras de usuários ADMIN
+        ]
+      } else {
+        // Para usuários ADMIN ou quando não incluir cifras de admin, mostrar apenas as próprias
+        where.userId = userId
+      }
     }
 
     if (search) {
-      where.OR = [
-        { title: { contains: search, mode: 'insensitive' } },
-        { artist: { contains: search, mode: 'insensitive' } },
-        { lyrics: { contains: search, mode: 'insensitive' } }
-      ]
+      const searchCondition = {
+        OR: [
+          { title: { contains: search, mode: 'insensitive' } },
+          { artist: { contains: search, mode: 'insensitive' } },
+          { lyrics: { contains: search, mode: 'insensitive' } }
+        ]
+      }
+      
+      if (where.OR) {
+        // Se já existe OR (para incluir cifras de admin), combinar com busca
+        where.AND = [
+          { OR: where.OR },
+          searchCondition
+        ]
+        delete where.OR
+      } else {
+        where.OR = searchCondition.OR
+      }
     }
 
     if (tag) {
-      where.tags = {
-        some: {
-          name: tag
+      const tagCondition = {
+        tags: {
+          some: {
+            name: tag
+          }
         }
+      }
+      
+      if (where.AND) {
+        where.AND.push(tagCondition)
+      } else if (where.OR) {
+        where.AND = [
+          { OR: where.OR },
+          tagCondition
+        ]
+        delete where.OR
+      } else {
+        where.tags = tagCondition.tags
       }
     }
 
@@ -56,7 +106,8 @@ export async function GET(request: NextRequest) {
           select: {
             id: true,
             name: true,
-            email: true
+            email: true,
+            role: true
           }
         },
         tags: {
