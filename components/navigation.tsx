@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { Music, List, Home, LogOut, User } from "lucide-react"
+import { Music, List, Home, LogOut, User, Shield } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/lib/use-auth"
 import { useAuthContext } from "@/lib/auth-context"
@@ -27,6 +27,14 @@ const navigation = [
     name: "Repertórios",
     href: "/repertorio",
     icon: List
+  }
+]
+
+const adminNavigation = [
+  {
+    name: "Usuários",
+    href: "/admin/users",
+    icon: Shield
   }
 ]
 
@@ -56,6 +64,26 @@ export function Navigation() {
             
             <div className="hidden sm:flex space-x-6">
               {navigation.map((item) => {
+                const isActive = pathname === item.href
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className={cn(
+                      "flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                      isActive
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    )}
+                  >
+                    <item.icon className="h-4 w-4" />
+                    <span>{item.name}</span>
+                  </Link>
+                )
+              })}
+              
+              {/* Links de administração */}
+              {isAuthenticated && user?.role === 'ADMIN' && adminNavigation.map((item) => {
                 const isActive = pathname === item.href
                 return (
                   <Link
@@ -106,6 +134,26 @@ export function Navigation() {
         <div className="sm:hidden border-t pt-2 pb-2">
           <div className="flex space-x-4">
             {navigation.map((item) => {
+              const isActive = pathname === item.href
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={cn(
+                    "flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                    isActive
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
+                >
+                  <item.icon className="h-4 w-4" />
+                  <span>{item.name}</span>
+                </Link>
+              )
+            })}
+            
+            {/* Links de administração mobile */}
+            {isAuthenticated && user?.role === 'ADMIN' && adminNavigation.map((item) => {
               const isActive = pathname === item.href
               return (
                 <Link

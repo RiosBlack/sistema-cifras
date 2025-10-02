@@ -4,6 +4,9 @@ import type { NextRequest } from 'next/server'
 // Rotas que requerem autenticação
 const protectedRoutes = ['/dashboard', '/repertorio']
 
+// Rotas que requerem permissão de administrador
+const adminRoutes = ['/admin']
+
 // Rotas que não devem ser acessadas quando logado
 const authRoutes = ['/login', '/register']
 
@@ -12,6 +15,7 @@ export function middleware(request: NextRequest) {
   
   // Verificar se a rota está protegida
   const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
+  const isAdminRoute = adminRoutes.some(route => pathname.startsWith(route))
   const isAuthRoute = authRoutes.some(route => pathname.startsWith(route))
   
   // Obter token/sessão do cookie (em uma implementação real, você usaria JWT)
@@ -20,6 +24,13 @@ export function middleware(request: NextRequest) {
   
   // Se tentar acessar rota protegida sem estar logado
   if (isProtectedRoute && !isAuthenticated) {
+    const loginUrl = new URL('/login', request.url)
+    loginUrl.searchParams.set('redirect', pathname)
+    return NextResponse.redirect(loginUrl)
+  }
+  
+  // Se tentar acessar rota de admin sem estar logado
+  if (isAdminRoute && !isAuthenticated) {
     const loginUrl = new URL('/login', request.url)
     loginUrl.searchParams.set('redirect', pathname)
     return NextResponse.redirect(loginUrl)
