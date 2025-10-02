@@ -7,8 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Switch } from "@/components/ui/switch"
-import { Label } from "@/components/ui/label"
 import { CifraEditor } from "@/components/cifras/cifra-editor"
 import { CifraImport } from "@/components/cifras/cifra-import"
 import { AuthRouteGuard } from "@/components/auth-route-guard"
@@ -47,6 +45,11 @@ interface Tag {
   id: string
   name: string
   color: string
+  user: {
+    id: string
+    name: string
+    role: 'USER' | 'ADMIN'
+  }
 }
 
 export default function Dashboard() {
@@ -62,7 +65,7 @@ export default function Dashboard() {
   const [transpositionOffset, setTranspositionOffset] = useState(0)
   const [showImport, setShowImport] = useState(false)
   const [importedData, setImportedData] = useState<any>(null)
-  const [showOnlyOwnCifras, setShowOnlyOwnCifras] = useState(false)
+  const [loadingCifras, setLoadingCifras] = useState(true)
 
   // Carregar dados da API
   useEffect(() => {
@@ -71,13 +74,6 @@ export default function Dashboard() {
       loadTags()
     }
   }, [user?.id])
-
-  // Recarregar cifras quando o filtro mudar
-  useEffect(() => {
-    if (user?.id) {
-      loadCifras()
-    }
-  }, [showOnlyOwnCifras])
 
   // Resetar transposição quando abrir uma nova cifra
   useEffect(() => {
@@ -89,9 +85,10 @@ export default function Dashboard() {
   const loadCifras = async () => {
     if (!user?.id) return
     
+    setLoadingCifras(true)
     try {
-      // Para usuários USER, incluir cifras de admins (exceto se filtrar apenas próprias)
-      const includeAdminCifras = user.role === 'USER' && !showOnlyOwnCifras
+      // Para usuários USER, incluir cifras de admins
+      const includeAdminCifras = user.role === 'USER'
       const response = await fetch(`/api/cifras?userId=${user.id}&includeAdminCifras=${includeAdminCifras}`)
       const result = await response.json()
       
@@ -100,6 +97,8 @@ export default function Dashboard() {
       }
     } catch (error) {
       console.error('Erro ao carregar cifras:', error)
+    } finally {
+      setLoadingCifras(false)
     }
   }
 
@@ -107,7 +106,9 @@ export default function Dashboard() {
     if (!user?.id) return
     
     try {
-      const response = await fetch(`/api/tags?userId=${user.id}`)
+      // Para usuários USER, incluir tags de admins
+      const includeAdminTags = user.role === 'USER'
+      const response = await fetch(`/api/tags?userId=${user.id}&includeAdminTags=${includeAdminTags}`)
       const result = await response.json()
       
       if (result.success) {
@@ -380,7 +381,7 @@ export default function Dashboard() {
     const isOwnCifra = cifra.user.id === user?.id
     const isAdminCifra = cifra.user.role === 'ADMIN' && !isOwnCifra
     
-    return (<Card key={cifra.id} className={`hover:shadow-md transition-shadow ${isAdminCifra ? 'border-l-4 border-l-blue-500' : ''}`}>
+    return (<Card key={cifra.id} className="hover:shadow-md transition-shadow">
         <CardHeader className="pb-3">
           <div className="flex justify-between items-start gap-2">
             <div className="flex-1 min-w-0">
@@ -626,8 +627,8 @@ export default function Dashboard() {
             onClick={() => setShowImport(true)} 
             variant="outline" 
             className="w-full sm:w-auto"
-            disabled={user?.role === 'USER' && !showOnlyOwnCifras}
-            title={user?.role === 'USER' && !showOnlyOwnCifras ? "Você só pode importar quando estiver vendo apenas suas cifras" : "Importar Cifra"}
+            disabled={user?.role === 'USER'}
+            title={user?.role === 'USER' ? "Apenas administradores podem importar cifras" : "Importar Cifra"}
           >
             <Upload className="w-4 h-4 mr-2" />
             Importar Cifra
@@ -662,46 +663,52 @@ export default function Dashboard() {
             <span className="text-sm font-medium">Filtrar por tags:</span>
           </div>
           <div className="flex flex-wrap gap-2">
-            {tags.map((tag) => (
-              <Badge
-                key={tag.id}
-                variant={selectedTags.includes(tag.name) ? "default" : "outline"}
-                className="cursor-pointer text-xs"
-                onClick={() => toggleTag(tag.name)}
-              >
-                {tag.name}
-              </Badge>
-            ))}
+            {tags.map((tag) => {
+              const isAdminTag = tag.user.role === 'ADMIN' && tag.user.id !== user?.id
+              return (
+                <Badge
+                  key={tag.id}
+                  variant={selectedTags.includes(tag.name) ? "default" : "outline"}
+                  className="cursor-pointer text-xs"
+                  onClick={() => toggleTag(tag.name)}
+                  title={isAdminTag ? `Tag criada por ${tag.user.name}` : 'Sua tag'}
+                >
+                  {tag.name}
+                </Badge>
+              )
+            })}
           </div>
         </div>
 
-        {/* Filtro de cifras próprias/todas - apenas para usuários USER */}
-        {user?.role === 'USER' && (
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="show-only-own"
-              checked={showOnlyOwnCifras}
-              onCheckedChange={setShowOnlyOwnCifras}
-            />
-            <Label htmlFor="show-only-own" className="text-sm">
-              Mostrar apenas minhas cifras
-            </Label>
-          </div>
-        )}
       </div>
 
       {/* Lista de cifras */}
-      {filteredCifras.length === 0 ? (
+      {loadingCifras ? (
+        <Card className="text-center py-12">
+          <CardContent>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <h3 className="text-lg font-medium mb-2">Carregando cifras...</h3>
+            <p className="text-muted-foreground">
+              Aguarde enquanto buscamos as cifras disponíveis
+            </p>
+          </CardContent>
+        </Card>
+      ) : filteredCifras.length === 0 ? (
         <Card className="text-center py-12">
           <CardContent>
             <Music className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
             <h3 className="text-lg font-medium mb-2">
-              {cifras.length === 0 ? "Nenhuma cifra cadastrada" : "Nenhuma cifra encontrada"}
+              {cifras.length === 0 ? "Nenhuma cifra disponível" : "Nenhuma cifra encontrada"}
             </h3>
             <p className="text-muted-foreground mb-4">
-              {cifras.length === 0 ? "Comece adicionando sua primeira cifra!" : "Tente ajustar os filtros de busca."}
+              {cifras.length === 0 
+                ? (user?.role === 'USER' 
+                    ? "Não há cifras disponíveis no momento" 
+                    : "Comece adicionando sua primeira cifra!")
+                : "Tente ajustar os filtros de busca."
+              }
             </p>
-            {cifras.length === 0 && (
+            {cifras.length === 0 && user?.role === 'ADMIN' && (
               <Button onClick={() => setShowEditor(true)}>
                 <Plus className="w-4 h-4 mr-2" />
                 Adicionar Primeira Cifra
