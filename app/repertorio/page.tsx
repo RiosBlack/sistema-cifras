@@ -68,6 +68,7 @@ export default function RepertorioPage() {
   const [selectedCifra, setSelectedCifra] = useState<Cifra | null>(null)
   const [selectedKey, setSelectedKey] = useState("")
   const [addingToRepertorio, setAddingToRepertorio] = useState<Repertorio | null>(null)
+  const [cifraSearchTerm, setCifraSearchTerm] = useState("")
 
   // Carregar dados da API
   useEffect(() => {
@@ -196,6 +197,17 @@ export default function RepertorioPage() {
     setShowAddCifraModal(true)
     setSelectedCifra(null)
     setSelectedKey("")
+    setCifraSearchTerm("")
+  }
+
+  const handleAddCifraModalOpenChange = (open: boolean) => {
+    setShowAddCifraModal(open)
+    if (!open) {
+      setCifraSearchTerm("")
+      setSelectedCifra(null)
+      setSelectedKey("")
+      setAddingToRepertorio(null)
+    }
   }
 
   const handleAddCifraToRepertorio = async () => {
@@ -221,6 +233,7 @@ export default function RepertorioPage() {
         setAddingToRepertorio(null)
         setSelectedCifra(null)
         setSelectedKey("")
+        setCifraSearchTerm("")
       }
     } catch (error) {
       console.error('Erro ao adicionar cifra ao repertório:', error)
@@ -471,6 +484,10 @@ export default function RepertorioPage() {
     repertorio.description?.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
+  const filteredCifrasForModal = cifras.filter((cifra) =>
+    cifra.title.toLowerCase().includes(cifraSearchTerm.toLowerCase())
+  )
+
   const renderRepertorioCard = (repertorio: Repertorio) => {
     const isOwnRepertorio = repertorio.user.id === user?.id
     const isAdminRepertorio = repertorio.user.role === 'ADMIN' && !isOwnRepertorio
@@ -715,7 +732,7 @@ export default function RepertorioPage() {
       </Dialog>
 
       {/* Modal de adicionar cifra */}
-      <Dialog open={showAddCifraModal} onOpenChange={setShowAddCifraModal}>
+      <Dialog open={showAddCifraModal} onOpenChange={handleAddCifraModalOpenChange}>
         <DialogContent className="max-w-2xl mx-4">
           <DialogHeader>
             <DialogTitle className="text-lg sm:text-xl">
@@ -730,27 +747,42 @@ export default function RepertorioPage() {
           <div className="space-y-4">
             <div>
               <label className="text-sm font-medium">Selecionar Cifra</label>
+              <div className="relative mt-2 mb-2">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                <Input
+                  placeholder="Buscar cifras..."
+                  value={cifraSearchTerm}
+                  onChange={(e) => setCifraSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
               <div className="grid gap-2 max-h-60 overflow-y-auto border rounded-md p-2">
-                {cifras.map((cifra) => (
-                  <div
-                    key={cifra.id}
-                    className={`p-2 sm:p-3 rounded-md border cursor-pointer transition-colors ${
-                      selectedCifra?.id === cifra.id
-                        ? 'border-primary bg-primary/5'
-                        : 'hover:bg-muted'
-                    }`}
-                    onClick={() => {
-                      setSelectedCifra(cifra)
-                      setSelectedKey(cifra.currentKey)
-                    }}
-                  >
-                    <div className="font-medium text-sm sm:text-base truncate">{cifra.title}</div>
-                    <div className="text-xs sm:text-sm text-muted-foreground truncate">{cifra.artist}</div>
-                    <div className="text-xs text-muted-foreground">
-                      Tom original: {cifra.currentKey}
+                {filteredCifrasForModal.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    Nenhuma cifra encontrada
+                  </p>
+                ) : (
+                  filteredCifrasForModal.map((cifra) => (
+                    <div
+                      key={cifra.id}
+                      className={`p-2 sm:p-3 rounded-md border cursor-pointer transition-colors ${
+                        selectedCifra?.id === cifra.id
+                          ? 'border-primary bg-primary/5'
+                          : 'hover:bg-muted'
+                      }`}
+                      onClick={() => {
+                        setSelectedCifra(cifra)
+                        setSelectedKey(cifra.currentKey)
+                      }}
+                    >
+                      <div className="font-medium text-sm sm:text-base truncate">{cifra.title}</div>
+                      <div className="text-xs sm:text-sm text-muted-foreground truncate">{cifra.artist}</div>
+                      <div className="text-xs text-muted-foreground">
+                        Tom original: {cifra.currentKey}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
 
@@ -783,7 +815,7 @@ export default function RepertorioPage() {
             <div className="flex flex-col sm:flex-row justify-end gap-2">
               <Button
                 variant="outline"
-                onClick={() => setShowAddCifraModal(false)}
+                onClick={() => handleAddCifraModalOpenChange(false)}
                 className="w-full sm:w-auto"
               >
                 Cancelar
