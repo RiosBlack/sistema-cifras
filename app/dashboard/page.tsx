@@ -327,6 +327,11 @@ export default function Dashboard() {
             }
             @media print {
               body { margin: 0; }
+              html, body, * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                color-adjust: exact !important;
+              }
             }
           </style>
         </head>

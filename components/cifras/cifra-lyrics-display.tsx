@@ -94,6 +94,7 @@ export const CIFRA_LYRICS_PRINT_STYLES = `
     padding: 3px 6px;
     border-radius: 4px;
     font-weight: bold;
+    color: #f97316;
   }
   .section-label {
     color: #000;
@@ -104,5 +105,12 @@ export const CIFRA_LYRICS_PRINT_STYLES = `
   }
   .sep-arrow {
     color: #2563eb;
+  }
+  @media print {
+    html, body, .cifra-content, .chord, .section-label, .sep-slash, .sep-arrow {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+      color-adjust: exact !important;
+    }
   }
 `
