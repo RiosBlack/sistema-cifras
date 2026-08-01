@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ChordSelector } from "./chord-selector"
 import { TransposeControls } from "./transpose-controls"
+import { CifraLyricsDisplay } from "./cifra-lyrics-display"
 import { Save, Music, Tag, X } from "lucide-react"
 import { NOTES, ALL_NOTES, transposeLyrics, extractChords, getSemitonesDifference } from "@/lib/music-utils"
 import { SectionChordBuilder } from "./section-chord-builder"
@@ -348,18 +349,7 @@ export function CifraEditor({ initialData, availableTags, onSave, onCancel }: Ci
           </div>
         </div>
 
-        <div className="whitespace-pre-wrap font-mono text-xs sm:text-sm leading-relaxed">
-          {formData.lyrics.split(/(\[[^\]]+\])/).map((part, index) => {
-            if (part.match(/^\[[^\]]+\]$/)) {
-              return (
-                <span key={index} className="text-primary font-bold bg-primary/10 px-1 rounded">
-                  {part.slice(1, -1)}
-                </span>
-              )
-            }
-            return part
-          })}
-        </div>
+        <CifraLyricsDisplay lyrics={formData.lyrics} className="text-xs sm:text-sm" />
       </div>
     )
   }

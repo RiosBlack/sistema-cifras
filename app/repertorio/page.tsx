@@ -9,6 +9,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Plus, Search, Music, Filter, Edit, Trash2, Eye, Play, ChevronUp, ChevronDown, X, Printer } from "lucide-react"
 import { NOTES, getSemitonesDifference, transposeLyrics } from "@/lib/music-utils"
+import {
+  CifraLyricsDisplay,
+  CIFRA_LYRICS_PRINT_STYLES,
+  formatCifraLyricsHtml,
+} from "@/components/cifras/cifra-lyrics-display"
 import { AuthRouteGuard } from "@/components/auth-route-guard"
 import { useAuthContext } from "@/lib/auth-context"
 
@@ -399,13 +404,10 @@ export default function RepertorioPage() {
               font-size: 14px;
               white-space: pre-wrap;
               line-height: 1.8;
-            }
-            .chord {
-              background-color: #f0f0f0;
-              padding: 2px 4px;
-              border-radius: 3px;
+              color: #f97316;
               font-weight: bold;
             }
+            ${CIFRA_LYRICS_PRINT_STYLES}
             .order {
               font-size: 14px;
               color: #999;
@@ -445,7 +447,7 @@ export default function RepertorioPage() {
                   ${finalTransposition !== 0 ? `<span><strong>Transposição:</strong> ${finalTransposition > 0 ? '+' : ''}${finalTransposition}</span>` : ''}
                 </div>
                 
-                <div class="cifra-content">${transposedLyrics.replace(/\[([^\]]+)\]/g, '<span class="chord">[$1]</span>')}</div>
+                <div class="cifra-content">${formatCifraLyricsHtml(transposedLyrics)}</div>
               </div>
             `
           }).join('')}
@@ -861,25 +863,10 @@ export default function RepertorioPage() {
                     </div>
                   </div>
                   
-                  <div className="whitespace-pre-wrap font-mono text-base leading-relaxed border rounded-lg p-4 bg-muted/20 font-bold text-orange-500">
-                    {transposedLyrics.split(/(\[[^\]]+\]|^[^:]+:)/gm).map((part, partIndex) => {
-                      if (part.match(/^\[[^\]]+\]$/)) {
-                        return (
-                          <span key={partIndex} className="text-primary font-bold bg-primary/10 px-1 rounded">
-                            {part.slice(1, -1)}
-                          </span>
-                        )
-                      }
-                      if (part.match(/^[^:]+:$/)) {
-                        return (
-                          <span key={partIndex} className="text-black font-normal">
-                            {part}
-                          </span>
-                        )
-                      }
-                      return part
-                    })}
-                  </div>
+                  <CifraLyricsDisplay
+                    lyrics={transposedLyrics}
+                    className="text-base border rounded-lg p-4 bg-muted/20"
+                  />
                   
                   {/* Controles simples */}
                   <div className="flex flex-wrap justify-end gap-2 mt-3 pt-3 border-t">

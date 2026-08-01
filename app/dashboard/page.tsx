@@ -9,6 +9,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { CifraEditor } from "@/components/cifras/cifra-editor"
 import { CifraImport } from "@/components/cifras/cifra-import"
+import {
+  CifraLyricsDisplay,
+  CIFRA_LYRICS_PRINT_STYLES,
+  formatCifraLyricsHtml,
+} from "@/components/cifras/cifra-lyrics-display"
 import { AuthRouteGuard } from "@/components/auth-route-guard"
 import { useAuthContext } from "@/lib/auth-context"
 import { transposeLyrics, getSemitonesDifference, NOTES, ALL_NOTES } from "@/lib/music-utils"
@@ -290,13 +295,10 @@ export default function Dashboard() {
               white-space: pre-wrap;
               line-height: 2;
               text-align: left;
-            }
-            .chord {
-              background-color: #f0f0f0;
-              padding: 3px 6px;
-              border-radius: 4px;
+              color: #f97316;
               font-weight: bold;
             }
+            ${CIFRA_LYRICS_PRINT_STYLES}
             .notes {
               background-color: #f8f9fa;
               padding: 15px;
@@ -347,7 +349,7 @@ export default function Dashboard() {
             </div>
           ` : ''}
           
-          <div class="cifra-content">${transposedLyrics.replace(/\[([^\]]+)\]/g, '<span class="chord">[$1]</span>')}</div>
+          <div class="cifra-content">${formatCifraLyricsHtml(transposedLyrics)}</div>
           
           ${cifra.tags && cifra.tags.length > 0 ? `
             <div class="tags">
@@ -580,25 +582,10 @@ export default function Dashboard() {
             </Button>
           </div>
 
-          <div className="whitespace-pre-wrap font-mono text-xl leading-relaxed border rounded-lg p-4 text-orange-500 font-bold">
-            {transposedLyrics.split(/(\[[^\]]+\]|^[^:]+:)/gm).map((part, index) => {
-              if (part.match(/^\[[^\]]+\]$/)) {
-                return (
-                  <span key={index} className="text-primary font-bold bg-primary/10 px-1 rounded">
-                    {part.slice(1, -1)}
-                  </span>
-                )
-              }
-              if (part.match(/^[^:]+:$/)) {
-                return (
-                  <span key={index} className="text-black font-normal">
-                    {part}
-                  </span>
-                )
-              }
-              return part
-            })}
-          </div>
+          <CifraLyricsDisplay
+            lyrics={transposedLyrics}
+            className="text-xl border rounded-lg p-4"
+          />
 
           {viewingCifra.notes && (
             <div className="border-t pt-4">
