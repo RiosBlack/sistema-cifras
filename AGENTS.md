@@ -61,4 +61,5 @@ pnpm run dev
 | `NODE_ENV` | development / production |
 
 ## Changelogs
+- [2026-07-31 — fix criar repertório (user)](changelogs/2026-07-31-fix-repertorio-create-user.md)
 - [2026-07-31 — cores dos separadores](changelogs/2026-07-31-separator-colors.md)

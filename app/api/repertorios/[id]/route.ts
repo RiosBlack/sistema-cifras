@@ -23,7 +23,8 @@ export async function GET(
           select: {
             id: true,
             name: true,
-            email: true
+            email: true,
+            role: true
           }
         },
         cifras: {
@@ -98,7 +99,8 @@ export async function PUT(
           select: {
             id: true,
             name: true,
-            email: true
+            email: true,
+            role: true
           }
         },
         cifras: {

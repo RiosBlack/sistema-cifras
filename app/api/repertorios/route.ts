@@ -100,6 +100,14 @@ export async function POST(request: NextRequest) {
     const repertorio = await prisma.repertorio.create({
       data: validatedData,
       include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true
+          }
+        },
         cifras: {
           include: {
             cifra: {
