@@ -834,7 +834,7 @@ export default function RepertorioPage() {
 
       {/* Modal de visualização de repertório */}
       <Dialog open={!!viewingRepertorio} onOpenChange={() => setViewingRepertorio(null)}>
-        <DialogContent className="max-w-[90%] sm:max-w-4xl max-h-[90vh] overflow-y-auto mx-auto my-auto">
+        <DialogContent className="max-w-[90%] sm:max-w-4xl max-h-[90vh] overflow-y-auto mx-auto my-auto max-md:left-0 max-md:top-0 max-md:translate-x-0 max-md:translate-y-0 max-md:w-full max-md:max-w-full max-md:h-dvh max-md:max-h-dvh max-md:rounded-none max-md:border-0">
           <DialogHeader>
             <DialogTitle className="text-center">
               <div className="space-y-2">
@@ -851,8 +851,8 @@ export default function RepertorioPage() {
             </DialogTitle>
           </DialogHeader>
 
-          {/* Botões de ação */}
-          <div className="flex justify-center gap-2 mb-4">
+          {/* Botões de ação — ocultos no mobile (modo imersivo só leitura) */}
+          <div className="hidden md:flex justify-center gap-2 mb-4">
             <Button
               variant="outline"
               size="sm"
@@ -905,8 +905,8 @@ export default function RepertorioPage() {
                     className="text-base border rounded-lg p-4 bg-muted/20"
                   />
                   
-                  {/* Controles simples */}
-                  <div className="flex flex-wrap justify-end gap-2 mt-3 pt-3 border-t">
+                  {/* Controles de edição — ocultos no mobile (modo imersivo só leitura) */}
+                  <div className="hidden md:flex flex-wrap justify-end gap-2 mt-3 pt-3 border-t">
                     <button
                       onClick={() => {
                         console.log('Mover para cima:', { repertorioId: viewingRepertorio?.id, cifraId: cifra.id, index })

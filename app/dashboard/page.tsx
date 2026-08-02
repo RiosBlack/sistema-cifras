@@ -516,7 +516,7 @@ export default function Dashboard() {
 
     return (
       <Dialog open={!!viewingCifra} onOpenChange={() => setViewingCifra(null)}>
-        <DialogContent className="max-w-[90%] max-h-[90vh] overflow-y-auto mx-auto my-auto">
+        <DialogContent className="max-w-[90%] max-h-[90vh] overflow-y-auto mx-auto my-auto max-md:left-0 max-md:top-0 max-md:translate-x-0 max-md:translate-y-0 max-md:w-full max-md:max-w-full max-md:h-dvh max-md:max-h-dvh max-md:rounded-none max-md:border-0">
           <DialogHeader>
             <DialogTitle className="text-center">
               <div className="space-y-2">
