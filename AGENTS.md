@@ -61,6 +61,7 @@ pnpm run dev
 | `NODE_ENV` | development / production |
 
 ## Changelogs
+- [2026-08-02 — PWA standalone](changelogs/2026-08-02-pwa-standalone.md)
 - [2026-08-02 — viewer imersivo no celular](changelogs/2026-08-02-mobile-immersive-viewer.md)
 - [2026-07-31 — busca no modal adicionar cifra](changelogs/2026-07-31-repertorio-add-cifra-search.md)
 - [2026-07-31 — impressão colorida](changelogs/2026-07-31-print-colors.md)
