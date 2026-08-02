@@ -12,8 +12,8 @@ Sistema web para gerenciamento de cifras musicais: criação/edição, transposi
 ## Regras de negócio
 - Usuários autenticados gerenciam suas próprias cifras e repertórios.
 - ADMIN pode ver cifras de outros usuários, mas só edita/exclui as próprias.
-- Separadores de acordes: ` / ` (barra) e ` → ` (seta de transição).
-- Visualização: acordes em laranja; **`/` preto**; **`→` e `Nx` (ex: 2x) azul**; rótulos de seção em preto.
+- Separadores de acordes: ` / ` (barra com espaços) e ` → ` (seta de transição).
+- Visualização: acordes em laranja (inclui slash chords como `C/E`); **` / ` preto**; **`→`, `Nx` (ex: 2x) e `()` azul**; `-` e textos com mais de 3 palavras em preto (notas ao redor continuam laranja); rótulos de seção em preto.
 
 ## Autenticação
 1. Login/registro em `/login` e `/register`.
@@ -61,6 +61,7 @@ pnpm run dev
 | `NODE_ENV` | development / production |
 
 ## Changelogs
+- [2026-08-02 — slash chords vs separadores](changelogs/2026-08-02-slash-chord-colors.md)
 - [2026-08-02 — PWA standalone](changelogs/2026-08-02-pwa-standalone.md)
 - [2026-08-02 — viewer imersivo no celular](changelogs/2026-08-02-mobile-immersive-viewer.md)
 - [2026-07-31 — busca no modal adicionar cifra](changelogs/2026-07-31-repertorio-add-cifra-search.md)

@@ -5,32 +5,59 @@ type CifraLyricsDisplayProps = {
   className?: string
 }
 
-const TOKEN_SPLIT = /(\s*\/\s*|\s*→\s*|\s*\d+x\b)/
+/**
+ * Tokens to colorize:
+ * - ` / ` (spaces on both sides) → black
+ * - `→` and `Nx` → blue
+ * - `(`, `)` → blue · `-` alone → black (chords around them stay orange)
+ * - textos com mais de 3 palavras → black
+ * Slash chords like `C/E` stay orange.
+ */
+const TOKEN_SPLIT = /(\s+\/\s+|\s*→\s*|\s*\d+x\b|[()\-])/
 
-/** Colorize / (black), → and Nx (blue) inside a chord/lyric segment. */
+function isLongText(seg: string): boolean {
+  return seg.trim().split(/\s+/).filter(Boolean).length > 3
+}
+
+/** Colorize separators and punctuation inside a chord/lyric segment. */
 function renderWithSeparators(text: string, keyPrefix: string | number) {
   return text.split(TOKEN_SPLIT).map((seg, i) => {
-    if (seg.match(/^\s*\/\s*$/)) {
+    if (!seg) return null
+
+    if (seg.match(/^\s+\/\s+$/) || seg === "-") {
       return (
         <span key={`${keyPrefix}-sep-${i}`} className="text-black">
           {seg}
         </span>
       )
     }
-    if (seg.match(/^\s*→\s*$/) || seg.match(/^\s*\d+x$/)) {
+    if (
+      seg === "(" ||
+      seg === ")" ||
+      seg.match(/^\s*→\s*$/) ||
+      seg.match(/^\s*\d+x$/)
+    ) {
       return (
         <span key={`${keyPrefix}-blue-${i}`} className="text-blue-600">
           {seg}
         </span>
       )
     }
-    return <span key={`${keyPrefix}-txt-${i}`}>{seg}</span>
+    if (isLongText(seg)) {
+      return (
+        <span key={`${keyPrefix}-txt-${i}`} className="text-black font-normal">
+          {seg}
+        </span>
+      )
+    }
+    return <span key={`${keyPrefix}-chord-${i}`}>{seg}</span>
   })
 }
 
 /**
  * Renders cifra lyrics with styled chords, section labels and separators.
- * `/` → black · `→` e `Nx` → blue · section labels → black · [chords] → primary
+ * ` / ` → black · slash chords (`C/E`) → orange · `→`/`Nx`/`()` → blue ·
+ * `-` → black · textos >3 palavras → black · section labels → black
  */
 export function CifraLyricsDisplay({ lyrics, className }: CifraLyricsDisplayProps) {
   return (
@@ -75,11 +102,20 @@ export function formatCifraLyricsHtml(lyrics: string): string {
       return part
         .split(TOKEN_SPLIT)
         .map((seg) => {
-          if (seg.match(/^\s*\/\s*$/)) {
+          if (!seg) return ""
+          if (seg.match(/^\s+\/\s+$/) || seg === "-") {
             return `<span class="sep-slash">${seg}</span>`
           }
-          if (seg.match(/^\s*→\s*$/) || seg.match(/^\s*\d+x$/)) {
+          if (
+            seg === "(" ||
+            seg === ")" ||
+            seg.match(/^\s*→\s*$/) ||
+            seg.match(/^\s*\d+x$/)
+          ) {
             return `<span class="sep-arrow">${seg}</span>`
+          }
+          if (isLongText(seg)) {
+            return `<span class="annotation">${seg}</span>`
           }
           return seg
         })
@@ -106,8 +142,12 @@ export const CIFRA_LYRICS_PRINT_STYLES = `
   .sep-arrow {
     color: #2563eb;
   }
+  .annotation {
+    color: #000;
+    font-weight: normal;
+  }
   @media print {
-    html, body, .cifra-content, .chord, .section-label, .sep-slash, .sep-arrow {
+    html, body, .cifra-content, .chord, .section-label, .sep-slash, .sep-arrow, .annotation {
       -webkit-print-color-adjust: exact !important;
       print-color-adjust: exact !important;
       color-adjust: exact !important;
